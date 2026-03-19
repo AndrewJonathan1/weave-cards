@@ -8,20 +8,19 @@ color: #8B7355
 *of a Thing or Person*
 
 #### Convey
-- Information
-- Status
-- Vibe
+1. Information
+2. Status
+3. Vibe
 
 ### PROCESS
 *Manage a*
 
-- A Service Process
-- An Event Process
+1. A Service Process
+2. An Event Process
 
 ### DISTRIBUTION
 
-#### Optimization
-- AI
-- Search Engine
-- Social Media
-- Word of Mouth
+1. AI
+2. Search Engine
+3. Social Media
+4. Word of Mouth
