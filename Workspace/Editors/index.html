@@ -345,6 +345,8 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   <div class="help-row"><span class="help-key">Cmd+D</span><span class="help-desc">duplicate selected</span></div>
   <div class="help-row"><span class="help-key">Arrow keys</span><span class="help-desc">nudge (10px)</span></div>
   <div class="help-row"><span class="help-key">color swatch</span><span class="help-desc">recolor selected</span></div>
+  <div class="help-row"><span class="help-key">Cmd+Z</span><span class="help-desc">undo</span></div>
+  <div class="help-row"><span class="help-key">Cmd+Shift+Z</span><span class="help-desc">redo</span></div>
   <h4>Canvas</h4>
   <div class="help-row"><span class="help-key">scroll / trackpad</span><span class="help-desc">pan</span></div>
   <div class="help-row"><span class="help-key">Space+drag</span><span class="help-desc">pan</span></div>
@@ -687,12 +689,10 @@ var selectedCards = new Set();
 // --- Undo / Redo ---
 var undoStack = [];
 var redoStack = [];
-var MAX_UNDO = 50;
 
 function pushUndo() {
   // Snapshot cards + connections only (not camera)
   undoStack.push(JSON.parse(JSON.stringify({ cards: state.cards, connections: state.connections })));
-  if (undoStack.length > MAX_UNDO) undoStack.shift();
   redoStack = [];
 }
 
@@ -1108,6 +1108,7 @@ function renderConnections() {
     line.style.pointerEvents = 'stroke';
     line.style.cursor = 'pointer';
     line.onclick = () => {
+      pushUndo();
       state.connections.splice(i, 1);
       renderConnections();
       scheduleSave();
@@ -1347,6 +1348,7 @@ function duplicateSelected() {
 
 function nudgeSelected(dx, dy) {
   if (selectedCards.size === 0) return;
+  pushUndo();
   selectedCards.forEach(function(id) {
     var c = state.cards.find(function(card) { return card.id === id; });
     if (!c) return;
@@ -1696,6 +1698,7 @@ async function importCards() {
     const other = JSON.parse(text);
     if (!other.cards) return;
 
+    pushUndo();
     let maxRight = 0;
     state.cards.forEach(c => { maxRight = Math.max(maxRight, c.x + c.w); });
     const offset = maxRight + 80;
@@ -2033,6 +2036,7 @@ ${h.slice(c+2)}`,d+=1;else break}e.push({indent:c,number:parseInt(l,10),content:
   window.stopEditing = function() {
     if (!editingCard) return;
 
+    pushUndo();
     editingCard.content = htmlToMarkdown(editor.getHTML());
     editor.unmount();
 
