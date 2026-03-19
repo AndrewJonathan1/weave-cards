@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@LAMP — Thinking Surface</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Work+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #FAF7F2;
+            --bg-deep: #F3EDE4;
+            --text: #1E1812;
+            --text-secondary: #6B5E52;
+            --text-muted: #9A8E82;
+            --gold: #B89545;
+            --terracotta: #C4704E;
+            --green-muted: #6B8B6B;
+            --border: #E5DDD2;
+            --card: #FFFFFF;
+            --enrichment-bg: #F0EBE2;
+            --enrichment-text: #7A6E62;
+            --pin: #C4704E;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-weight: 400;
+            opacity: 0;
+            animation: fadeIn 0.4s ease 0.1s forwards;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* ======== NAV ======== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(250, 247, 242, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            height: 48px;
+            gap: 32px;
+        }
+
+        nav .brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 0.04em;
+            color: var(--text);
+            margin-right: 24px;
+        }
+
+        nav a {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+
+        nav a:hover, nav a.active { color: var(--text); }
+
+        /* ======== SECTIONS ======== */
+        section {
+            padding: 80px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section:first-of-type { padding-top: 128px; }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 16px;
+        }
+
+        /* ======== HERO / ESSENCE ======== */
+        #essence {
+            text-align: center;
+            padding: 160px 40px 100px;
+            max-width: 900px;
+        }
+
+        #essence h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 72px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        #essence .subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 26px;
+            font-weight: 400;
+            font-style: italic;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+        }
+
+        #essence .core-statement {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 400;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        #essence .core-statement strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        /* ======== CLIENT ======== */
+        #client {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        #client .left-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--text);
+            position: sticky;
+            top: 80px;
+        }
+
+        .client-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .client-insight {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 32px;
+            position: relative;
+        }
+
+        .client-insight .lead {
+            font-size: 17px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .client-insight .arrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--gold);
+            font-weight: 500;
+            margin: 8px 0;
+            display: inline-block;
+        }
+
+        .client-insight .detail {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .client-insight .implication {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .client-insight .implication strong {
+            color: var(--text);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .nested {
+            padding-left: 20px;
+            border-left: 2px solid var(--border);
+            margin-top: 8px;
+            margin-left: 4px;
+        }
+
+        .nested .detail {
+            margin: 4px 0;
+        }
+
+        /* ======== JOBS ======== */
+        #jobs {
+            padding-bottom: 40px;
+        }
+
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .job-pillar {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 36px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-pillar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gold);
+        }
+
+        .job-pillar h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 6px;
+        }
+
+        .job-pillar .job-desc {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+
+        .job-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .job-item {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg);
+            padding: 6px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .job-sub-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .job-sub-section .sub-label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        /* ======== LANDSCAPE ======== */
+        #landscape {
+            background: var(--bg-deep);
+            max-width: none;
+            padding: 80px 40px;
+            margin: 0;
+        }
+
+        #landscape > .inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .landscape-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 48px;
+        }
+
+        .sphere-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .sphere-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 28px 24px;
+            transition: box-shadow 0.2s;
+        }
+
+        .sphere-card:hover {
+            box-shadow: 0 4px 20px rgba(30, 24, 18, 0.06);
+        }
+
+        .sphere-card.pinned {
+            border-left: 3px solid var(--pin);
+        }
+
+        .sphere-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .sphere-pin {
+            color: var(--pin);
+            margin-right: 4px;
+        }
+
+        .sphere-parent {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .sphere-segments {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .segment-tag {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg);
+            padding: 4px 12px;
+            border-radius: 16px;
+        }
+
+        .sphere-note {
+            font-size: 13px;
+            font-style: italic;
+            color: var(--enrichment-text);
+            background: var(--enrichment-bg);
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 12px;
+            line-height: 1.5;
+        }
+
+        .sphere-note::before {
+            content: 'from research · ';
+            font-size: 10px;
+            font-weight: 600;
+            font-style: normal;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .sphere-tree {
+            margin-top: 12px;
+        }
+
+        .tree-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 3px 0 3px 16px;
+            position: relative;
+        }
+
+        .tree-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 11px;
+            width: 8px;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .tree-item strong { color: var(--text); font-weight: 600; }
+
+        .tree-group {
+            padding-left: 16px;
+            border-left: 1px solid var(--border);
+            margin-left: 3px;
+        }
+
+        /* ======== FILTER ======== */
+        #filter {
+            padding: 100px 40px;
+        }
+
+        .filter-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .filter-subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            max-width: 600px;
+        }
+
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px 32px;
+        }
+
+        .criterion {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            gap: 16px;
+            align-items: start;
+            padding: 16px 0;
+        }
+
+        .criterion-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--border);
+            line-height: 1;
+            text-align: right;
+            padding-top: 2px;
+        }
+
+        .criterion-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .criterion-text strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .criterion-text span {
+            color: var(--text-secondary);
+        }
+
+        .filter-synthesis {
+            margin-top: 48px;
+            padding: 32px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-width: 720px;
+        }
+
+        .filter-synthesis p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .filter-synthesis em {
+            color: var(--text);
+            font-style: italic;
+        }
+
+        /* ======== STRATEGY ======== */
+        #strategy {
+            background: var(--text);
+            color: var(--bg);
+            max-width: none;
+            margin: 0;
+            padding: 80px 40px;
+        }
+
+        #strategy > .inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #strategy .section-label { color: var(--gold); }
+
+        .strategy-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--bg);
+            margin-bottom: 48px;
+        }
+
+        .strategy-principle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            font-weight: 500;
+            font-style: italic;
+            color: var(--gold);
+            margin-bottom: 48px;
+            max-width: 640px;
+        }
+
+        .tracks {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .track {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .track-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .track-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--bg);
+            margin-bottom: 12px;
+        }
+
+        .track-detail {
+            font-size: 14px;
+            color: rgba(250,247,242,0.6);
+            line-height: 1.7;
+        }
+
+        .distribution-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+        }
+
+        .dist-block h4 {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: rgba(250,247,242,0.5);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .variable {
+            font-size: 15px;
+            color: rgba(250,247,242,0.8);
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .variable:last-child { border-bottom: none; }
+
+        /* ======== OPEN ======== */
+        #open {
+            padding: 100px 40px 160px;
+        }
+
+        .open-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 48px;
+        }
+
+        .open-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+        }
+
+        .gap-card {
+            background: var(--card);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .gap-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--terracotta);
+            margin-bottom: 16px;
+        }
+
+        .gap-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .decided-list, .sensing-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .decided-item, .sensing-item {
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .decided-item {
+            background: rgba(107, 139, 107, 0.08);
+            color: var(--text);
+            border-left: 3px solid var(--green-muted);
+        }
+
+        .sensing-item {
+            background: rgba(184, 149, 69, 0.08);
+            color: var(--text-secondary);
+            border-left: 3px solid var(--gold);
+        }
+
+        /* ======== ENRICHMENT BLOCKS ======== */
+        .enrichment {
+            background: var(--enrichment-bg);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-top: 16px;
+            font-size: 13px;
+            font-style: italic;
+            color: var(--enrichment-text);
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .enrichment::before {
+            content: 'suggested';
+            font-size: 9px;
+            font-weight: 600;
+            font-style: normal;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* ======== RESPONSIVE ======== */
+        @media (max-width: 900px) {
+            .jobs-grid, .tracks, .criteria-grid, .open-grid, .distribution-section {
+                grid-template-columns: 1fr;
+            }
+            #client { grid-template-columns: 1fr; gap: 24px; }
+            #client .left-label { position: static; }
+            #essence h1 { font-size: 48px; }
+            section { padding: 60px 24px; }
+            nav { padding: 0 20px; gap: 16px; overflow-x: auto; }
+        }
+
+        @media print {
+            nav { display: none; }
+            section { padding: 40px 20px; }
+            #strategy { color: var(--text); background: var(--bg); }
+        }
+
+        /* ======== SCROLL REVEAL ======== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ======== NAV ======== -->
+<nav>
+    <span class="brand">@LAMP</span>
+    <a href="#essence">Essence</a>
+    <a href="#client">Client</a>
+    <a href="#jobs">Jobs</a>
+    <a href="#landscape">Landscape</a>
+    <a href="#filter">Filter</a>
+    <a href="#strategy">Strategy</a>
+    <a href="#open">Open</a>
+</nav>
+
+<!-- ======== ESSENCE ======== -->
+<section id="essence">
+    <h1>Wish-Fulfilling Jewel</h1>
+    <p class="subtitle">Midwifing coherence</p>
+    <p class="core-statement">
+        You have something in you that wants to exist in the world.
+        You can feel it but you can't make it.
+        <strong>In one conversation, we get it out of you and put it live on the internet.</strong>
+    </p>
+</section>
+
+<!-- ======== CLIENT ======== -->
+<section id="client">
+    <div class="left-label">
+        <div class="section-label">Core</div>
+        Who is it for
+    </div>
+    <div class="client-stack">
+        <div class="client-insight reveal">
+            <div class="lead">They need it <strong>QUICK</strong></div>
+            <div class="arrow">=&gt; Speed</div>
+        </div>
+
+        <div class="client-insight reveal">
+            <div class="lead">They are not familiar with what exactly that which they need and it's not their main thing and they need us to carry forward their implying</div>
+            <div class="implication">
+                <strong>They don't even know exactly what they want</strong>
+                <div class="nested">
+                    <div class="detail">=&gt; We listen to them</div>
+                    <div class="detail">We help educate them with what they want</div>
+                    <div class="detail">We help them build what they want — exactly what carries forward their implying</div>
+                    <div class="nested">
+                        <div class="detail">We are AI Native so we can build things that no one has thought of</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="enrichment">
+            Not the DIY Squarespace person. Not the Shopify daily-manager. The person who says: "This is important to me, but I don't want to deal with it." — the relationship Nabil has to his website is very different than a Shopify person's.
+        </div>
+    </div>
+</section>
+
+<!-- ======== JOBS ======== -->
+<section id="jobs">
+    <div class="section-label">Jobs to be Done</div>
+    <div class="jobs-grid">
+        <div class="job-pillar reveal">
+            <h3>Presentation</h3>
+            <div class="job-desc">of a Thing or Person</div>
+            <div class="job-sub-section">
+                <div class="sub-label">Convey</div>
+                <div class="job-items">
+                    <span class="job-item">Information</span>
+                    <span class="job-item">Status</span>
+                    <span class="job-item">Vibe</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="job-pillar reveal">
+            <h3>Process</h3>
+            <div class="job-desc">Manage a</div>
+            <div class="job-items">
+                <span class="job-item">A Service Process</span>
+                <span class="job-item">An Event Process</span>
+            </div>
+        </div>
+
+        <div class="job-pillar reveal">
+            <h3>Distribution</h3>
+            <div class="job-desc">&nbsp;</div>
+            <div class="job-sub-section">
+                <div class="sub-label">Optimization</div>
+                <div class="job-items">
+                    <span class="job-item">AI</span>
+                    <span class="job-item">Search Engine</span>
+                    <span class="job-item">Social Media</span>
+                    <span class="job-item">Word of Mouth</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ======== LANDSCAPE ======== -->
+<section id="landscape">
+    <div class="inner">
+        <div class="section-label">Where to Play</div>
+        <div class="landscape-title">Spheres &amp; Specific Businesses</div>
+        <div class="sphere-grid">
+
+            <div class="sphere-card pinned">
+                <div class="sphere-parent">Event Organization · Life Events · Events</div>
+                <div class="sphere-name"><span class="sphere-pin">📍</span> Weddings</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">PRESENTATION & PROCESS</span>
+                    <span class="segment-tag">Individuals</span>
+                    <span class="segment-tag">Wedding Planners</span>
+                </div>
+                <div class="sphere-note">High stakes ($10K-$200K budgets), weak tech competition, 12 repeatable pieces, built-in community. 2M weddings/year US. "Send us your stationery, we'll make your website match."</div>
+            </div>
+
+            <div class="sphere-card pinned">
+                <div class="sphere-parent">Event Organization · Life Events · Events</div>
+                <div class="sphere-name"><span class="sphere-pin">📍</span> Funerals</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Funeral Homes</span>
+                </div>
+                <div class="sphere-note">Extreme urgency (same-day). Deeply meaningful. ~3M deaths/year US. No one does this well.</div>
+            </div>
+
+            <div class="sphere-card pinned">
+                <div class="sphere-parent">—</div>
+                <div class="sphere-name"><span class="sphere-pin">📍</span> Real Estate</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Agents</span>
+                    <span class="segment-tag">Property Listings</span>
+                </div>
+                <div class="sphere-note">$2B+ annual web spend. 1.5M agents in US. Speed is critical for listings. Luxury property sites: $5K-$15K.</div>
+            </div>
+
+            <div class="sphere-card pinned">
+                <div class="sphere-parent">—</div>
+                <div class="sphere-name"><span class="sphere-pin">📍</span> Local Businesses</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Dentists</span>
+                    <span class="segment-tag">Lawyers</span>
+                    <span class="segment-tag">Photographers</span>
+                </div>
+                <div class="sphere-note">Credibility sites. Their hourly rate is $300-$1K so a $3K website is a few hours of billing.</div>
+            </div>
+
+            <div class="sphere-card pinned">
+                <div class="sphere-parent">—</div>
+                <div class="sphere-name"><span class="sphere-pin">📍</span> Remote Contractors</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Coaches</span>
+                    <span class="segment-tag">Consultants</span>
+                    <span class="segment-tag">Agencies</span>
+                    <span class="segment-tag">Marketing Teams</span>
+                </div>
+                <div class="sphere-tree">
+                    <div class="tree-item"><strong>What:</strong> Pitch Pages · Delivery Portal · Client Deliverables · Micro Sites</div>
+                </div>
+                <div class="sphere-note">Challenge: coaches often don't have money. Established ones with revenue do. A coach billing $200/hr who gets one new client from the site has paid for it in a week.</div>
+            </div>
+
+            <div class="sphere-card">
+                <div class="sphere-parent">Event Organization</div>
+                <div class="sphere-name">Conferences & Events</div>
+                <div class="sphere-note">Time-sensitive, predictable structure, mostly terrible existing sites. Repeatable per organizer.</div>
+            </div>
+
+            <div class="sphere-card">
+                <div class="sphere-parent">Event Organization · Life Events</div>
+                <div class="sphere-name">Baby Showers · Coming of Age</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Bar Mitzvahs</span>
+                    <span class="segment-tag">Quinceañeras</span>
+                    <span class="segment-tag">Individuals</span>
+                </div>
+            </div>
+
+            <div class="sphere-card">
+                <div class="sphere-parent">—</div>
+                <div class="sphere-name">Small Businesses</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Therapist</span>
+                    <span class="segment-tag">Restaurants</span>
+                </div>
+                <div class="sphere-note">Therapists: the website IS the first therapeutic interaction. AI that helps potential clients explore fit. Reduces no-shows.</div>
+            </div>
+
+            <div class="sphere-card">
+                <div class="sphere-parent">—</div>
+                <div class="sphere-name">Education</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">Thought Leaders</span>
+                </div>
+            </div>
+
+            <div class="sphere-card">
+                <div class="sphere-parent">Event Organization · Life Events</div>
+                <div class="sphere-name">Distribution</div>
+                <div class="sphere-segments">
+                    <span class="segment-tag">D2C</span>
+                    <span class="segment-tag">Service People</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ======== FILTER ======== -->
+<section id="filter">
+    <div class="section-label">The Filter</div>
+    <div class="filter-title">The "Wedding Shape"</div>
+    <div class="filter-subtitle">10 properties of an ideal niche — from Andrew conversation</div>
+
+    <div class="criteria-grid">
+        <div class="criterion reveal">
+            <div class="criterion-num">1</div>
+            <div class="criterion-text"><strong>Bounded, repeatable deliverable</strong><span>Same shape each time, learnable, improvable</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">2</div>
+            <div class="criterion-text"><strong>Simple tech ceiling</strong><span>AI can produce it reliably, no ongoing engineering</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">3</div>
+            <div class="criterion-text"><strong>High emotional + financial stakes</strong><span>People care deeply AND have money allocated</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">4</div>
+            <div class="criterion-text"><strong>Weak tech competition</strong><span>The industry hasn't been well-served</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">5</div>
+            <div class="criterion-text"><strong>Client doesn't want to manage it</strong><span>Full service, done-for-you, don't make me learn a tool</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">6</div>
+            <div class="criterion-text"><strong>Specific, enumerable problems</strong><span>"my cards don't match my site," "guests keep texting me"</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">7</div>
+            <div class="criterion-text"><strong>Each problem is AI-solvable</strong><span>Sensing identifies the problem, tech solves it</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">8</div>
+            <div class="criterion-text"><strong>10x improvement possible</strong><span>Not competing on 10% better — dramatically better</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">9</div>
+            <div class="criterion-text"><strong>Built-in community</strong><span>Brides talk to brides, agents talk to agents</span></div>
+        </div>
+        <div class="criterion reveal">
+            <div class="criterion-num">10</div>
+            <div class="criterion-text"><strong>Clear end point</strong><span>You know when it's done, no open-ended scope</span></div>
+        </div>
+    </div>
+
+    <div class="filter-synthesis reveal">
+        <p>Sensing without tech is just consulting. Tech without sensing is just Squarespace. <em>The cross: sensing identifies WHICH problems this client has. Tech solves them in minutes.</em></p>
+    </div>
+</section>
+
+<!-- ======== STRATEGY ======== -->
+<section id="strategy">
+    <div class="inner">
+        <div class="section-label">Strategy</div>
+        <div class="strategy-principle">Focus on Sphere × Niche that have large concentration of Core</div>
+
+        <div class="tracks">
+            <div class="track">
+                <div class="track-label">Track 1 — Now</div>
+                <div class="track-name">Wish-Fulfilling Jewel</div>
+                <div class="track-detail">Take clients who come. Proven (Nabil). Warm leads exist. Revenue from day one. Every client teaches you about the container.</div>
+            </div>
+            <div class="track">
+                <div class="track-label">Track 2 — Parallel</div>
+                <div class="track-name">Weddings</div>
+                <div class="track-detail">Deeper domain, richer research, higher stakes. Taste extraction tool. Stationery-to-website match. More complex but potentially a monopoly position.</div>
+            </div>
+        </div>
+
+        <div class="distribution-section">
+            <div class="dist-block">
+                <h4>Distribution Strategies</h4>
+                <div class="variable">Make it and show it to them</div>
+            </div>
+            <div class="dist-block">
+                <h4>Variables</h4>
+                <div class="variable">Perceived Value</div>
+                <div class="variable">Perceived Likelihood of Success</div>
+                <div class="variable">Trust In Your Character</div>
+                <div class="variable">Trust in Your Ability</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ======== OPEN ======== -->
+<section id="open">
+    <div class="section-label">Still Open</div>
+    <div class="open-title">Gaps &amp; Questions</div>
+
+    <div class="open-grid">
+        <div>
+            <div class="gap-card" style="margin-bottom: 24px;">
+                <h4>The Gap No One Fills</h4>
+                <p>Totally custom to them on PRESENTATION & PROCESS</p>
+                <div class="enrichment" style="margin-top: 16px;">
+                    The "eagerly helpful friend" problem: current AI solves before it listens. "I have this feeling—" "YEAH YEAH I ALREADY DID IT FOR YOU." Every tool on the market does this. You do the opposite.
+                </div>
+            </div>
+
+            <h4 style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;">Decided</h4>
+            <div class="decided-list">
+                <div class="decided-item">Static sites + Airtable. No auth, no e-commerce, no WordPress.</div>
+                <div class="decided-item">Two tracks: websites now, weddings parallel.</div>
+                <div class="decided-item">Record everything for future AI training.</div>
+                <div class="decided-item">We own the domain for clients, pass through costs.</div>
+            </div>
+        </div>
+
+        <div>
+            <h4 style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;">Still Sensing</h4>
+            <div class="sensing-list">
+                <div class="sensing-item">Which specific niche to go deep on first</div>
+                <div class="sensing-item">Exact pricing — $1,500 founding rate feels right but untested</div>
+                <div class="sensing-item">Subscription vs per-change maintenance model</div>
+                <div class="sensing-item">When to build the AI intake chatbot</div>
+                <div class="sensing-item">How to solve the wedding taste extraction problem</div>
+                <div class="sensing-item">How to set scope boundaries with "just one more thing" clients</div>
+                <div class="sensing-item">Wedding websites or wedding stationery as Track 2 entry point</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+
+    // Active nav link
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('nav a');
+    const navObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => link.classList.remove('active'));
+                const active = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+                if (active) active.classList.add('active');
+            }
+        });
+    }, { threshold: 0.3 });
+    sections.forEach(s => navObserver.observe(s));
+</script>
+
+</body>
+</html>

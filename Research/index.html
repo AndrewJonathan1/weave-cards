@@ -1,340 +1,2274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@LAMP</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Whole Case</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1e;
+  --paper: #f4f1eb;
+  --cream: #ede8df;
+  --warm: #c4956a;
+  --warm-light: #e8d4bf;
+  --warm-dim: rgba(196, 149, 106, 0.15);
+  --sage: #7a9a7e;
+  --sage-dim: rgba(122, 154, 126, 0.12);
+  --dusk: #8b7ea6;
+  --dusk-dim: rgba(139, 126, 166, 0.12);
+  --slate: #6b7c8a;
+  --rust: #b5654a;
+  --rust-dim: rgba(181, 101, 74, 0.1);
+  --gold: #b8973a;
+  --gold-dim: rgba(184, 151, 58, 0.1);
+  --text: #3a3a3e;
+  --text-light: #6b6b72;
+  --text-faint: #9a9aa0;
+  --border: rgba(0,0,0,0.08);
+  --border-warm: rgba(196,149,106,0.25);
+  --serif: 'Cormorant Garamond', 'Georgia', serif;
+  --sans: 'DM Sans', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #f5f5f0;
-            color: #2d2d2d;
-            line-height: 1.55;
-            opacity: 0;
-            transition: opacity 0.12s ease;
-        }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body.loaded { opacity: 1; }
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
 
-        /* ---- Toolbar ---- */
-        #toolbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #e0e0db;
-            padding: 10px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
 
-        #toolbar .title {
-            font-weight: 700;
-            font-size: 15px;
-            color: #2d2d2d;
-            letter-spacing: 0.01em;
-        }
+/* === HEADER / HERO === */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 40px;
+  position: relative;
+  background: var(--ink);
+  color: var(--paper);
+  overflow: hidden;
+}
 
-        #toolbar .hint {
-            font-size: 11px;
-            color: #bbb;
-            margin-left: auto;
-            font-style: italic;
-        }
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 30% 40%, rgba(196,149,106,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 70% 60%, rgba(122,154,126,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 800px 300px at 50% 80%, rgba(139,126,166,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
 
-        /* ---- Board ---- */
-        #board {
-            display: flex;
-            align-items: flex-start;
-            gap: 0;
-            height: calc(100vh - 45px);
-            overflow-x: auto;
-            overflow-y: hidden;
-            scroll-behavior: smooth;
-        }
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  text-align: center;
+}
 
-        /* ---- Column ---- */
-        .column {
-            min-width: 290px;
-            max-width: 340px;
-            flex-shrink: 0;
-            height: 100%;
-            overflow-y: auto;
-            padding: 28px 20px 60px;
-            border-right: 1px solid #e8e8e3;
-            background: transparent;
-        }
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--warm);
+  margin-bottom: 40px;
+  opacity: 0.9;
+}
 
-        .column:last-child { border-right: none; }
+.hero h1 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  color: var(--cream);
+}
 
-        /* Subtle scrollbar */
-        .column::-webkit-scrollbar { width: 4px; }
-        .column::-webkit-scrollbar-track { background: transparent; }
-        .column::-webkit-scrollbar-thumb { background: #d5d5d0; border-radius: 2px; }
-        .column::-webkit-scrollbar-thumb:hover { background: #bbb; }
+.hero h1 em {
+  font-style: italic;
+  color: var(--warm);
+}
 
-        /* ---- Column Title ---- */
-        .column-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin: 0 0 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--accent, #2d2d2d);
-            letter-spacing: -0.01em;
-            color: #1a1a1a;
-        }
+.hero-sub {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 300;
+  line-height: 1.7;
+  color: rgba(244,241,235,0.6);
+  max-width: 640px;
+  margin: 0 auto 60px;
+}
 
-        /* ---- Cards ---- */
-        .card {
-            background: #fff;
-            border: 1px solid #e5e5e0;
-            border-radius: 8px;
-            padding: 16px 18px;
-            margin-bottom: 12px;
-            transition: box-shadow 0.15s ease;
-        }
+.hero-nav {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
-        .card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
+.hero-nav a {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(244,241,235,0.4);
+  text-decoration: none;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(244,241,235,0.1);
+  transition: all 0.3s ease;
+}
 
-        .card h3 {
-            font-size: 14px;
-            font-weight: 700;
-            margin: 0 0 10px;
-            color: #1a1a1a;
-            letter-spacing: 0.01em;
-        }
+.hero-nav a:hover {
+  color: var(--warm);
+  border-color: var(--warm);
+}
 
-        .card p {
-            font-size: 13px;
-            margin: 6px 0;
-            color: #444;
-        }
+/* === MAIN LAYOUT === */
+.canvas {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
 
-        .card ul, .card ol {
-            font-size: 13px;
-            margin: 4px 0;
-            padding-left: 18px;
-        }
+/* === SECTION HEADERS === */
+.section-header {
+  padding: 120px 0 60px;
+  max-width: 800px;
+}
 
-        .card li {
-            margin: 3px 0;
-            color: #444;
-        }
+.section-number {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+}
 
-        .card li > ul { margin: 2px 0; }
+.section-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
 
-        .card strong {
-            font-weight: 600;
-            color: #2d2d2d;
-        }
+.section-desc {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--text-light);
+  line-height: 1.7;
+  max-width: 560px;
+}
 
-        /* ---- Outline (Workflowy-style) ---- */
-        .outline {
-            font-size: 13px;
-        }
+/* === THE CORE — radial diagram === */
+.core-diagram {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 120px;
+  aspect-ratio: 1;
+}
 
-        .outline ul {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
+.core-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+  z-index: 10;
+  box-shadow: 0 0 80px rgba(26,26,30,0.15);
+}
 
-        .outline > ul > li {
-            margin-bottom: 8px;
-        }
+.core-center-label {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--warm);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
 
-        .outline li {
-            position: relative;
-            padding-left: 16px;
-            margin: 2px 0;
-            color: #444;
-        }
+.core-center-sub {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(244,241,235,0.5);
+}
 
-        .outline li::before {
-            content: '';
-            position: absolute;
-            left: 2px;
-            top: 8px;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #ccc;
-        }
+.core-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
 
-        .outline li > ul {
-            padding-left: 4px;
-            margin-left: 6px;
-            border-left: 1px solid #e8e8e3;
-        }
+.core-ring-1 { width: 420px; height: 420px; }
+.core-ring-2 { width: 620px; height: 620px; border-style: dashed; }
+.core-ring-3 { width: 840px; height: 840px; border-color: rgba(0,0,0,0.04); }
 
-        .outline strong {
-            font-weight: 600;
-            color: #2d2d2d;
-        }
+.core-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
 
-        /* Pinned items get a subtle highlight */
-        .outline li:has(> strong) {
-            color: #2d2d2d;
-        }
+.core-node-inner {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  text-align: center;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+  transition: all 0.3s ease;
+  cursor: default;
+  min-width: 120px;
+}
 
-        /* ---- Prose ---- */
-        .prose {
-            font-size: 13px;
-            color: #444;
-        }
+.core-node-inner:hover {
+  box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+  border-color: var(--border-warm);
+}
 
-        .prose p { margin: 8px 0; }
-        .prose strong { color: #2d2d2d; }
+.core-node-label {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
 
-        .prose ul, .prose ol {
-            margin: 6px 0;
-            padding-left: 18px;
-        }
+.core-node-meta {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
 
-        .prose li { margin: 3px 0; }
+/* Node color accents */
+.node-warm .core-node-inner { border-left: 3px solid var(--warm); }
+.node-sage .core-node-inner { border-left: 3px solid var(--sage); }
+.node-dusk .core-node-inner { border-left: 3px solid var(--dusk); }
+.node-rust .core-node-inner { border-left: 3px solid var(--rust); }
+.node-gold .core-node-inner { border-left: 3px solid var(--gold); }
+.node-slate .core-node-inner { border-left: 3px solid var(--slate); }
 
-        .prose h3 {
-            font-size: 14px;
-            font-weight: 700;
-            margin: 16px 0 8px;
-            color: #1a1a1a;
-        }
+/* === TWO TRACKS — side by side editorial === */
+.tracks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-bottom: 120px;
+  align-items: start;
+}
 
-        .prose blockquote {
-            border-left: 2px solid #ddd;
-            padding-left: 12px;
-            color: #777;
-            margin: 10px 0;
-        }
+.track {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
 
-        /* ---- Empty state ---- */
-        .column-empty {
-            font-size: 12px;
-            color: #ccc;
-            font-style: italic;
-            padding: 12px 0;
-        }
+.track::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
 
-        /* ---- Print ---- */
-        @media print {
-            #toolbar { display: none; }
-            #board { height: auto; overflow: visible; flex-wrap: wrap; }
-            .column { height: auto; overflow: visible; page-break-inside: avoid; }
-        }
-    </style>
+.track-jewel::before { background: linear-gradient(90deg, var(--warm), var(--gold)); }
+.track-wedding::before { background: linear-gradient(90deg, var(--sage), var(--dusk)); }
+
+.track-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.track-jewel .track-eyebrow { color: var(--warm); }
+.track-wedding .track-eyebrow { color: var(--sage); }
+
+.track h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.8rem;
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+.track-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.track-item {
+  padding-left: 20px;
+  border-left: 2px solid var(--border);
+  transition: border-color 0.3s;
+}
+
+.track-item:hover { border-color: var(--warm); }
+
+.track-item-label {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.track-item-desc {
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+/* === 10 PROPERTIES FRAMEWORK === */
+.framework {
+  background: var(--ink);
+  border-radius: 20px;
+  padding: 80px 60px;
+  margin-bottom: 120px;
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+
+.framework::after {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196,149,106,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.framework-header {
+  margin-bottom: 48px;
+}
+
+.framework-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--warm);
+  margin-bottom: 12px;
+}
+
+.framework h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 2.4rem;
+  line-height: 1.2;
+  color: var(--cream);
+  margin-bottom: 12px;
+}
+
+.framework-sub {
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(244,241,235,0.5);
+  max-width: 500px;
+}
+
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.property {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 24px 20px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.property:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(196,149,106,0.3);
+  transform: translateY(-2px);
+}
+
+.property-num {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  color: var(--warm);
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+.property-name {
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--cream);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.property-desc {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  color: rgba(244,241,235,0.4);
+  line-height: 1.5;
+}
+
+/* === VALUE LANDSCAPE — horizontal scroll cards === */
+.value-landscape {
+  margin-bottom: 120px;
+}
+
+.value-row {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 20px 0 40px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--warm-light) transparent;
+}
+
+.value-row::-webkit-scrollbar { height: 4px; }
+.value-row::-webkit-scrollbar-track { background: transparent; }
+.value-row::-webkit-scrollbar-thumb { background: var(--warm-light); border-radius: 2px; }
+
+.value-card {
+  flex: 0 0 320px;
+  scroll-snap-align: start;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 36px 28px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.value-card:hover {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+  transform: translateY(-3px);
+}
+
+.value-card-num {
+  font-family: var(--mono);
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--cream);
+  position: absolute;
+  top: 20px;
+  right: 24px;
+}
+
+.value-card-title {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 12px;
+  line-height: 1.3;
+  padding-right: 40px;
+}
+
+.value-card-body {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--text-light);
+  line-height: 1.65;
+}
+
+.value-card-accent {
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 20px;
+}
+
+.vc-warm .value-card-accent { background: var(--warm); }
+.vc-sage .value-card-accent { background: var(--sage); }
+.vc-dusk .value-card-accent { background: var(--dusk); }
+.vc-rust .value-card-accent { background: var(--rust); }
+.vc-gold .value-card-accent { background: var(--gold); }
+.vc-slate .value-card-accent { background: var(--slate); }
+
+/* === NICHE MAP — the evaluation terrain === */
+.niche-map {
+  margin-bottom: 120px;
+}
+
+.niche-terrain {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.niche {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 28px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.niche:hover {
+  box-shadow: 0 6px 30px rgba(0,0,0,0.05);
+}
+
+.niche-pin {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.niche-pin.pin-hot { color: var(--rust); }
+.niche-pin.pin-warm { color: var(--warm); }
+.niche-pin.pin-explore { color: var(--sage); }
+.niche-pin.pin-adjacent { color: var(--dusk); }
+
+.niche h4 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.niche-props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.niche-prop {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.05em;
+  background: var(--cream);
+  color: var(--text-light);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.niche-detail {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.niche-detail strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.niche-detail .price {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--warm);
+}
+
+/* Niche featured (larger) */
+.niche-featured {
+  grid-column: span 2;
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.niche-featured h4 {
+  font-size: 1.6rem;
+}
+
+/* === MARKET TERRAIN — the data layer === */
+.market-terrain {
+  margin-bottom: 120px;
+}
+
+.market-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.market-bar {
+  display: grid;
+  grid-template-columns: 200px 1fr 100px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.market-bar:hover {
+  background: rgba(196,149,106,0.04);
+}
+
+.market-bar-label {
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.market-bar-fill-track {
+  height: 24px;
+  background: var(--cream);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.market-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-warm { background: linear-gradient(90deg, var(--warm), var(--gold)); }
+.bar-sage { background: var(--sage); }
+.bar-dusk { background: var(--dusk); }
+.bar-rust { background: var(--rust); }
+.bar-slate { background: var(--slate); }
+
+.market-bar-value {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+/* === SPHERES — the taxonomy === */
+.spheres {
+  margin-bottom: 120px;
+}
+
+.sphere-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.sphere {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 24px;
+  background: white;
+  position: relative;
+}
+
+.sphere::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+}
+
+.sphere-events::before { background: var(--warm); }
+.sphere-realestate::before { background: var(--rust); }
+.sphere-local::before { background: var(--sage); }
+.sphere-remote::before { background: var(--dusk); }
+
+.sphere-title {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sphere-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.sphere-events .sphere-dot { background: var(--warm); }
+.sphere-realestate .sphere-dot { background: var(--rust); }
+.sphere-local .sphere-dot { background: var(--sage); }
+.sphere-remote .sphere-dot { background: var(--dusk); }
+
+.sphere-segments {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sphere-segment {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--text);
+  padding: 8px 12px;
+  background: var(--cream);
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.sphere-segment:hover {
+  background: var(--warm-dim);
+}
+
+.sphere-segment-sub {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+/* === DECISIONS / OPEN QUESTIONS === */
+.decisions {
+  margin-bottom: 120px;
+}
+
+.decision-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.decision-col h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.6rem;
+  color: var(--ink);
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.decided-list, .open-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.decided-item, .open-item {
+  padding: 16px 20px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.decided-item {
+  background: var(--sage-dim);
+  border-left: 3px solid var(--sage);
+  color: var(--text);
+}
+
+.open-item {
+  background: var(--warm-dim);
+  border-left: 3px solid var(--warm);
+  color: var(--text);
+}
+
+.decided-item strong, .open-item strong {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: var(--ink);
+}
+
+/* === RESEARCH ENRICHMENT — visually distinct === */
+.enrichment {
+  position: relative;
+  margin: 40px 0;
+  padding: 28px 32px;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(139,126,166,0.02) 10px,
+    rgba(139,126,166,0.02) 20px
+  );
+  border: 1px dashed rgba(139,126,166,0.25);
+  border-radius: 12px;
+}
+
+.enrichment::before {
+  content: 'FROM RESEARCH';
+  position: absolute;
+  top: -9px;
+  left: 24px;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--dusk);
+  background: var(--paper);
+  padding: 0 10px;
+}
+
+.enrichment p {
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--text-light);
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* === KEY INSIGHT CALLOUT === */
+.insight-callout {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px;
+  margin: 60px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.insight-callout::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--warm), var(--sage));
+}
+
+.insight-callout blockquote {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--ink);
+  font-style: italic;
+}
+
+.insight-callout cite {
+  display: block;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+/* === FOOTER === */
+.page-footer {
+  padding: 80px 40px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.page-footer p {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* === SCOPE CUTS === */
+.scope-cuts {
+  margin-bottom: 120px;
+}
+
+.cuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.cut-item {
+  display: flex;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--cream);
+  border-radius: 10px;
+  align-items: flex-start;
+}
+
+.cut-icon {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--rust);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cut-text {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.cut-text strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.cut-reason {
+  font-family: var(--serif);
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  font-style: italic;
+  margin-top: 3px;
+}
+
+/* === SPEED ADVANTAGE === */
+.speed-strip {
+  background: linear-gradient(135deg, var(--ink) 0%, #2a2a30 100%);
+  border-radius: 20px;
+  padding: 60px;
+  margin: 80px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  color: var(--paper);
+}
+
+.speed-col {
+  text-align: center;
+}
+
+.speed-col-label {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(244,241,235,0.4);
+  margin-bottom: 12px;
+}
+
+.speed-col-value {
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  font-weight: 300;
+  color: var(--cream);
+  margin-bottom: 6px;
+}
+
+.speed-col-value.fast { color: var(--warm); }
+
+.speed-col-price {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: rgba(244,241,235,0.5);
+}
+
+/* === TRIGGER MOMENTS === */
+.triggers {
+  margin-bottom: 120px;
+}
+
+.trigger-timeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.trigger-timeline::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.trigger-item {
+  position: relative;
+  padding: 20px 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.trigger-item::before {
+  content: '';
+  position: absolute;
+  left: -32px;
+  top: 26px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--warm);
+  background: var(--paper);
+}
+
+.trigger-item.tier-1::before { background: var(--warm); }
+.trigger-item.tier-2::before { background: var(--paper); border-color: var(--sage); }
+.trigger-item.tier-3::before { background: var(--paper); border-color: var(--text-faint); }
+
+.trigger-name {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.trigger-urgency {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.trigger-urgency.extreme { color: var(--rust); }
+.trigger-urgency.high { color: var(--warm); }
+.trigger-urgency.medium { color: var(--sage); }
+
+.trigger-desc {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  max-width: 600px;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards;
+}
+
+.fade-in-d1 { animation-delay: 0.1s; }
+.fade-in-d2 { animation-delay: 0.2s; }
+.fade-in-d3 { animation-delay: 0.3s; }
+.fade-in-d4 { animation-delay: 0.4s; }
+
+/* Intersection observer triggers */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+  .properties-grid { grid-template-columns: repeat(3, 1fr); }
+  .sphere-container { grid-template-columns: repeat(2, 1fr); }
+  .niche-terrain { grid-template-columns: repeat(2, 1fr); }
+  .niche-featured { grid-column: span 2; grid-row: span 1; }
+}
+
+@media (max-width: 900px) {
+  .tracks { grid-template-columns: 1fr; }
+  .properties-grid { grid-template-columns: repeat(2, 1fr); }
+  .speed-strip { grid-template-columns: 1fr; gap: 32px; }
+  .decision-strip { grid-template-columns: 1fr; }
+  .cuts-grid { grid-template-columns: 1fr; }
+  .niche-terrain { grid-template-columns: 1fr; }
+  .niche-featured { grid-column: span 1; }
+  .market-bar { grid-template-columns: 140px 1fr 80px; }
+  .canvas { padding: 0 24px; }
+  .core-diagram { display: none; }
+  .core-mobile { display: block !important; }
+}
+
+@media (max-width: 600px) {
+  .hero { padding: 60px 24px; }
+  .properties-grid { grid-template-columns: 1fr; }
+  .sphere-container { grid-template-columns: 1fr; }
+  .hero-nav { flex-direction: column; align-items: center; gap: 16px; }
+}
+
+/* Mobile replacement for radial diagram */
+.core-mobile {
+  display: none;
+  margin-bottom: 80px;
+}
+
+.core-mobile-center {
+  background: var(--ink);
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.core-mobile-center .core-center-label {
+  font-size: 1.5rem;
+}
+
+.core-mobile-nodes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* === CROSS FORMULA === */
+.cross-formula {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px;
+  margin: 60px 0;
+  text-align: center;
+}
+
+.cross-formula-equation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.cross-term {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--ink);
+  padding: 12px 24px;
+  border-radius: 10px;
+}
+
+.cross-term.sensing { background: var(--warm-dim); color: var(--warm); }
+.cross-term.tech { background: var(--sage-dim); color: var(--sage); }
+
+.cross-op {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--text-faint);
+}
+
+.cross-result {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.cross-note {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin-top: 16px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* === AI FEATURES === */
+.ai-features {
+  margin: 60px 0;
+}
+
+.ai-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.ai-feature {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 28px 24px;
+  color: var(--paper);
+  transition: all 0.3s;
+}
+
+.ai-feature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(26,26,30,0.2);
+}
+
+.ai-feature-name {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--warm);
+  margin-bottom: 10px;
+}
+
+.ai-feature-desc {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: rgba(244,241,235,0.7);
+  line-height: 1.5;
+}
+
+.ai-feature-example {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  color: rgba(244,241,235,0.35);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+@media (max-width: 900px) {
+  .ai-feature-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
-    <div id="toolbar">
-        <span class="title">@LAMP</span>
-        <span class="hint">Edit files in sections/ &mdash; saves reload instantly</span>
+
+<!-- ============================================= -->
+<!-- HERO -->
+<!-- ============================================= -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow fade-in">The Whole Case</div>
+    <h1 class="fade-in fade-in-d1">Midwifing <em>Coherence</em></h1>
+    <p class="hero-sub fade-in fade-in-d2">
+      You have something in you that wants to exist in the world. You can feel it but you can't make it. In one conversation, we get it out of you and put it live on the internet.
+    </p>
+    <nav class="hero-nav fade-in fade-in-d3">
+      <a href="#core">The Core</a>
+      <a href="#two-tracks">Two Tracks</a>
+      <a href="#framework">10 Properties</a>
+      <a href="#value">Value Landscape</a>
+      <a href="#niches">Niche Map</a>
+      <a href="#market">Market Terrain</a>
+      <a href="#triggers">Trigger Moments</a>
+      <a href="#decisions">Decisions</a>
+    </nav>
+  </div>
+</section>
+
+<div class="canvas">
+
+<!-- ============================================= -->
+<!-- SECTION 1: THE CORE -->
+<!-- ============================================= -->
+<div id="core">
+  <div class="section-header reveal">
+    <div class="section-number">01</div>
+    <h2 class="section-title">What This Actually Is</h2>
+    <p class="section-desc">Not a website business. The thing you've been doing your whole life &mdash; sitting with someone, feeling their world, and reflecting it back in a form they couldn't have made themselves.</p>
+  </div>
+
+  <!-- Radial diagram — desktop only -->
+  <div class="core-diagram reveal">
+    <!-- Rings -->
+    <div class="core-ring core-ring-3"></div>
+    <div class="core-ring core-ring-2"></div>
+    <div class="core-ring core-ring-1"></div>
+
+    <!-- Center -->
+    <div class="core-center">
+      <div class="core-center-label">Midwifing<br>Coherence</div>
+      <div class="core-center-sub">Sensing + Making</div>
     </div>
-    <div id="board"></div>
 
-    <script type="module">
-        import { marked } from 'marked';
+    <!-- Inner ring nodes — what you actually do -->
+    <div class="core-node node-warm" style="top: 22%; left: 50%;">
+      <div class="core-node-inner">
+        <div class="core-node-label">Listen at the felt-sense level</div>
+        <div class="core-node-meta">Step 1</div>
+      </div>
+    </div>
+    <div class="core-node node-warm" style="top: 39%; left: 81%;">
+      <div class="core-node-inner">
+        <div class="core-node-label">Ask questions they didn't know to ask</div>
+        <div class="core-node-meta">Step 2</div>
+      </div>
+    </div>
+    <div class="core-node node-warm" style="top: 65%; left: 84%;">
+      <div class="core-node-inner">
+        <div class="core-node-label">Sense what matters</div>
+        <div class="core-node-meta">Step 3</div>
+      </div>
+    </div>
+    <div class="core-node node-sage" style="top: 80%; left: 58%;">
+      <div class="core-node-inner">
+        <div class="core-node-label">Translate through every layer</div>
+        <div class="core-node-meta">Design, Story, Structure, Feel</div>
+      </div>
+    </div>
+    <div class="core-node node-sage" style="top: 80%; left: 32%;">
+      <div class="core-node-inner">
+        <div class="core-node-label">Make it real, live, in their hands</div>
+        <div class="core-node-meta">Same Day</div>
+      </div>
+    </div>
+    <div class="core-node node-gold" style="top: 60%; left: 14%;">
+      <div class="core-node-inner">
+        <div class="core-node-label">They see themselves clearly</div>
+        <div class="core-node-meta">The Result</div>
+      </div>
+    </div>
 
-        // Import all section markdown files, sorted by filename
-        const modules = import.meta.glob('./sections/*.md', {
-            query: '?raw',
-            import: 'default',
-            eager: true
+    <!-- Outer ring nodes — comparisons -->
+    <div class="core-node node-slate" style="top: 8%; left: 28%;">
+      <div class="core-node-inner">
+        <div class="core-node-label" style="text-decoration: line-through; color: var(--text-faint);">Agency: 4-8 weeks</div>
+        <div class="core-node-meta">$5K&ndash;$50K</div>
+      </div>
+    </div>
+    <div class="core-node node-slate" style="top: 8%; left: 72%;">
+      <div class="core-node-inner">
+        <div class="core-node-label" style="text-decoration: line-through; color: var(--text-faint);">Squarespace: days of frustration</div>
+        <div class="core-node-meta">Do It Yourself</div>
+      </div>
+    </div>
+    <div class="core-node node-slate" style="top: 38%; left: 5%;">
+      <div class="core-node-inner">
+        <div class="core-node-label" style="text-decoration: line-through; color: var(--text-faint);">Lovable: assumes you can articulate</div>
+        <div class="core-node-meta">AI That Doesn't Listen</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile version -->
+  <div class="core-mobile reveal">
+    <div class="core-mobile-center">
+      <div class="core-center-label">Midwifing Coherence</div>
+      <div class="core-center-sub">Sensing + Making</div>
+    </div>
+    <div class="core-mobile-nodes">
+      <div class="core-node-inner" style="border-left: 3px solid var(--warm); text-align: left;">
+        <div class="core-node-label">Listen at the felt-sense level</div>
+      </div>
+      <div class="core-node-inner" style="border-left: 3px solid var(--warm); text-align: left;">
+        <div class="core-node-label">Ask questions they didn't know to ask</div>
+      </div>
+      <div class="core-node-inner" style="border-left: 3px solid var(--warm); text-align: left;">
+        <div class="core-node-label">Sense what matters</div>
+      </div>
+      <div class="core-node-inner" style="border-left: 3px solid var(--sage); text-align: left;">
+        <div class="core-node-label">Translate through every layer</div>
+      </div>
+      <div class="core-node-inner" style="border-left: 3px solid var(--sage); text-align: left;">
+        <div class="core-node-label">Make it real, live, in their hands</div>
+      </div>
+      <div class="core-node-inner" style="border-left: 3px solid var(--gold); text-align: left;">
+        <div class="core-node-label">They see themselves clearly</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-callout reveal">
+    <blockquote>
+      &ldquo;You're not designing a website. You're midwifing someone's presence into being. A doula for digital expression.&rdquo;
+    </blockquote>
+    <cite>Olivia's naming</cite>
+  </div>
+
+  <!-- The Cross Formula -->
+  <div class="cross-formula reveal">
+    <div class="cross-formula-equation">
+      <span class="cross-term sensing">Sensing Layer</span>
+      <span class="cross-op">&times;</span>
+      <span class="cross-term tech">Tech Layer</span>
+      <span class="cross-op">=</span>
+      <span class="cross-term" style="background: var(--gold-dim); color: var(--gold);">The Thing</span>
+    </div>
+    <div class="cross-result">Sensing without tech is just consulting. Tech without sensing is just Squarespace.</div>
+    <div class="cross-note">The sensing layer identifies which problems <em>this particular person</em> has and what &ldquo;right&rdquo; looks like for them. The tech layer solves it in minutes. Neither alone works.</div>
+  </div>
+
+  <!-- Speed comparison strip -->
+  <div class="speed-strip reveal">
+    <div class="speed-col">
+      <div class="speed-col-label">Traditional Agency</div>
+      <div class="speed-col-value">4&ndash;8 weeks</div>
+      <div class="speed-col-price">$5,000&ndash;$50,000</div>
+    </div>
+    <div class="speed-col">
+      <div class="speed-col-label">DIY (Squarespace / Wix)</div>
+      <div class="speed-col-value">Days&ndash;weeks</div>
+      <div class="speed-col-price">Frustration + $14/mo</div>
+    </div>
+    <div class="speed-col">
+      <div class="speed-col-label">This Service</div>
+      <div class="speed-col-value fast">1 Conversation</div>
+      <div class="speed-col-price">Coherence, delivered</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 2: TWO TRACKS -->
+<!-- ============================================= -->
+<div id="two-tracks">
+  <div class="section-header reveal">
+    <div class="section-number">02</div>
+    <h2 class="section-title">Two Tracks</h2>
+    <p class="section-desc">The same core muscle, two containers. Start with the jewel &mdash; simpler, proven. Let the wedding track be shaped by deeper research.</p>
+  </div>
+
+  <div class="tracks reveal">
+    <!-- Track 1: Wish-Fulfilling Jewel -->
+    <div class="track track-jewel">
+      <div class="track-eyebrow">Track One &mdash; Start Here</div>
+      <h3>The Wish-Fulfilling Jewel</h3>
+      <ul class="track-items">
+        <li class="track-item">
+          <div class="track-item-label">Who it's for</div>
+          <div class="track-item-desc">The person with an unclear felt sense who just wants someone to handle it. Not the DIY Squarespace person. Not the Shopify daily-manager.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Who it's not for</div>
+          <div class="track-item-desc">Anyone who needs e-commerce, complex backends, user auth.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">What happens</div>
+          <div class="track-item-desc">Get on a call, extract their implying, build the thing live or near-live, deliver.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">What they get</div>
+          <div class="track-item-desc">A static (or Airtable-backed) site that's live and theirs. Custom domain. Works on every device. Done.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Proven by</div>
+          <div class="track-item-desc">Nabil &mdash; architecture portfolio, built in 15 minutes from one conversation.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Warm leads</div>
+          <div class="track-item-desc">Eva, Facebook friend, anyone who's been stuck for months or years.</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Track 2: Wedding -->
+    <div class="track track-wedding">
+      <div class="track-eyebrow">Track Two &mdash; Deeper Research</div>
+      <h3>Wedding Track</h3>
+      <ul class="track-items">
+        <li class="track-item">
+          <div class="track-item-label">The shape</div>
+          <div class="track-item-desc">Always 12 pieces. Same thing each time. Repeatability = high value to low effort.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">PRESENTATION & PROCESS</div>
+          <div class="track-item-desc">Stationery + matching website + AI guest chat + RSVP handling.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Killer feature</div>
+          <div class="track-item-desc">The &ldquo;matching&rdquo; &mdash; nobody offers stationery that matches the website. AI chat where guests ask &ldquo;where do I stay?&rdquo; instead of texting the bride.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Distribution</div>
+          <div class="track-item-desc">D2C + Service People (wedding planners).</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Market</div>
+          <div class="track-item-desc">~2M weddings/year in US. Growing desire for custom over Zola/Knot templates.</div>
+        </li>
+        <li class="track-item">
+          <div class="track-item-label">Channel play</div>
+          <div class="track-item-desc">Venue sites &rarr; refers couples &rarr; wedding stationery/website service.</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="enrichment reveal">
+    <p>The sequencing matters: start with the wish-fulfilling jewel because it&rsquo;s simpler, proven (Nabil), and warm leads exist. Every client teaches something about the container. Let it be shaped by real encounters, not by planning. Insights flow back to the wedding track.</p>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 3: THE 10 PROPERTIES FRAMEWORK -->
+<!-- ============================================= -->
+<div id="framework">
+  <div class="framework reveal">
+    <div class="framework-header">
+      <div class="framework-eyebrow">03 &mdash; Evaluation Framework</div>
+      <h2>The 10 &ldquo;Wedding-Shaped&rdquo; Properties</h2>
+      <p class="framework-sub">What makes a niche structurally right for this service? These are the properties that make weddings work &mdash; and any niche that shares them is a candidate.</p>
+    </div>
+    <div class="properties-grid">
+      <div class="property">
+        <div class="property-num">01</div>
+        <div class="property-name">Bounded, repeatable deliverable</div>
+        <div class="property-desc">Same shape each time, learnable, improvable</div>
+      </div>
+      <div class="property">
+        <div class="property-num">02</div>
+        <div class="property-name">Simple tech ceiling</div>
+        <div class="property-desc">AI can produce it reliably, no ongoing engineering</div>
+      </div>
+      <div class="property">
+        <div class="property-num">03</div>
+        <div class="property-name">High emotional + financial stakes</div>
+        <div class="property-desc">People care deeply AND have money allocated</div>
+      </div>
+      <div class="property">
+        <div class="property-num">04</div>
+        <div class="property-name">Weak tech competition</div>
+        <div class="property-desc">Industry hasn't been well-served because tech people don't understand it</div>
+      </div>
+      <div class="property">
+        <div class="property-num">05</div>
+        <div class="property-name">Client doesn't want to manage it</div>
+        <div class="property-desc">Full service, done-for-you, don't make me learn a tool</div>
+      </div>
+      <div class="property">
+        <div class="property-num">06</div>
+        <div class="property-name">Specific, enumerable problems</div>
+        <div class="property-desc">&ldquo;My cards don't match my site&rdquo; &mdash; concrete, not vague</div>
+      </div>
+      <div class="property">
+        <div class="property-num">07</div>
+        <div class="property-name">Each problem AI-solvable once understood</div>
+        <div class="property-desc">Sensing identifies the problem, tech solves it</div>
+      </div>
+      <div class="property">
+        <div class="property-num">08</div>
+        <div class="property-name">10x improvement possible</div>
+        <div class="property-desc">Not 10% better &mdash; dramatically better than everything available</div>
+      </div>
+      <div class="property">
+        <div class="property-num">09</div>
+        <div class="property-name">Built-in community</div>
+        <div class="property-desc">Brides talk to brides, agents know agents, they share, they recommend</div>
+      </div>
+      <div class="property">
+        <div class="property-num">10</div>
+        <div class="property-name">Clear end point</div>
+        <div class="property-desc">You know when it's done, no open-ended scope</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 4: VALUE LANDSCAPE -->
+<!-- ============================================= -->
+<div id="value">
+  <div class="section-header reveal">
+    <div class="section-number">04</div>
+    <h2 class="section-title">The Full Value Landscape</h2>
+    <p class="section-desc">The whole menu, not just the signature dish. What you can actually offer.</p>
+  </div>
+
+  <div class="value-landscape reveal">
+    <div class="value-row">
+      <div class="value-card vc-warm">
+        <div class="value-card-num">01</div>
+        <div class="value-card-title">Speed itself is the product</div>
+        <div class="value-card-body">&ldquo;I've been meaning to do this for two years. You did it in an hour.&rdquo; Worth $2K&ndash;$5K to someone whose time is worth real money.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-warm">
+        <div class="value-card-num">02</div>
+        <div class="value-card-title">Full concierge</div>
+        <div class="value-card-body">Domain, hosting, design, copy, build, deploy. They talk, you handle everything. The anti-Squarespace. They don't learn a tool, pick a template, or manage a dashboard.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-dusk">
+        <div class="value-card-num">03</div>
+        <div class="value-card-title">The felt-sense layer</div>
+        <div class="value-card-body">Premium. For people whose work IS philosophical and who need that depth. The architect needed it. A dentist probably doesn't. Available when they want it.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-sage">
+        <div class="value-card-num">04</div>
+        <div class="value-card-title">AI features nobody else offers</div>
+        <div class="value-card-body">Chat-against-your-site. AI intake/screening. Smart portfolio exploration. A genuine technical moat right now.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-gold">
+        <div class="value-card-num">05</div>
+        <div class="value-card-title">The retheme superpower</div>
+        <div class="value-card-body">&ldquo;Got new branding? Send us your stationery, we'll make your website match.&rdquo; Traditional agencies charge full redesign prices. AI makes it trivial.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-sage">
+        <div class="value-card-num">06</div>
+        <div class="value-card-title">Airtable-backed dynamic content</div>
+        <div class="value-card-body">New buildings, menu items, team members &mdash; update a spreadsheet, site reflects it. No CMS to learn, no WordPress.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-slate">
+        <div class="value-card-num">07</div>
+        <div class="value-card-title">Maintenance without headaches</div>
+        <div class="value-card-body">Monitoring that downloads the page and verifies content. Domain renewals handled. SSL managed. They never think about it.</div>
+        <div class="value-card-accent"></div>
+      </div>
+      <div class="value-card vc-rust">
+        <div class="value-card-num">08</div>
+        <div class="value-card-title">Wedding-specific package</div>
+        <div class="value-card-body">Stationery + matching website + AI guest chat + RSVP. The &ldquo;matching&rdquo; is the killer feature. Nobody offers this coherent experience.</div>
+        <div class="value-card-accent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Features detail -->
+  <div class="ai-features reveal">
+    <div class="ai-feature-grid">
+      <div class="ai-feature">
+        <div class="ai-feature-name">Chat-Against-Your-Site</div>
+        <div class="ai-feature-desc">Guests/visitors ask questions, the page scrolls to the answer and highlights it. Built for weddings, works for ANY business.</div>
+        <div class="ai-feature-example">&ldquo;Do you have vegetarian options?&rdquo; &rarr; scrolls to menu, highlights</div>
+      </div>
+      <div class="ai-feature">
+        <div class="ai-feature-name">AI Intake / Screening</div>
+        <div class="ai-feature-desc">Chatbot interviews potential clients before they reach the business owner. Pre-qualifies leads. Reduces no-shows and bad-fit consultations.</div>
+        <div class="ai-feature-example">Therapist: &ldquo;I'm dealing with anxiety after a career change&rdquo; &rarr; surfaces approach fit</div>
+      </div>
+      <div class="ai-feature">
+        <div class="ai-feature-name">Smart Portfolio Exploration</div>
+        <div class="ai-feature-desc">Filter, explore, discover naturally. What was built for the architecture site &mdash; applicable to any portfolio-driven business.</div>
+        <div class="ai-feature-example">By region, typology, size &mdash; with architectural notation markers</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 5: NICHE MAP -->
+<!-- ============================================= -->
+<div id="niches">
+  <div class="section-header reveal">
+    <div class="section-number">05</div>
+    <h2 class="section-title">Niche Terrain</h2>
+    <p class="section-desc">Evaluated against the 10 properties. Pinned niches have the strongest structural fit.</p>
+  </div>
+
+  <div class="niche-map">
+    <div class="niche-terrain reveal">
+
+      <!-- FEATURED: Weddings -->
+      <div class="niche niche-featured">
+        <div class="niche-pin pin-hot">Pinned &mdash; Deepest Research</div>
+        <h4>Weddings</h4>
+        <div class="niche-props">
+          <span class="niche-prop">BOUNDED</span>
+          <span class="niche-prop">SIMPLE TECH</span>
+          <span class="niche-prop">HIGH STAKES</span>
+          <span class="niche-prop">WEAK COMPETITION</span>
+          <span class="niche-prop">DONE-FOR-YOU</span>
+          <span class="niche-prop">SPECIFIC PROBLEMS</span>
+          <span class="niche-prop">AI-SOLVABLE</span>
+          <span class="niche-prop">10X POSSIBLE</span>
+          <span class="niche-prop">COMMUNITY</span>
+          <span class="niche-prop">CLEAR END</span>
+        </div>
+        <div class="niche-detail">
+          <p><strong>Always 12 pieces, same shape each time.</strong> Stationery + matching website + AI guest chat + RSVP. ~2M weddings/year in US. Growing desire for custom over Zola/Knot templates.</p>
+          <p style="margin-top: 8px;">Killer feature: the &ldquo;matching&rdquo; &mdash; nobody offers stationery + website coherence. AI chat replaces &ldquo;guests keep texting me.&rdquo;</p>
+          <p style="margin-top: 8px;" class="price">$500&ndash;$2,000 (premium/custom: $2,000&ndash;$5,000)</p>
+          <p style="margin-top: 12px;"><strong>Channel play:</strong> Venue sites &rarr; refer couples &rarr; stationery/website service</p>
+        </div>
+      </div>
+
+      <!-- Luxury Real Estate -->
+      <div class="niche">
+        <div class="niche-pin pin-hot">Pinned &mdash; Proven Shape</div>
+        <h4>Luxury / Premium Real Estate</h4>
+        <div class="niche-props">
+          <span class="niche-prop">BOUNDED</span>
+          <span class="niche-prop">HIGH STAKES</span>
+          <span class="niche-prop">TIME-SENSITIVE</span>
+          <span class="niche-prop">COMMUNITY</span>
+        </div>
+        <div class="niche-detail">
+          <p>Individual property marketing sites for high-end listings. <strong>Not firm websites &mdash; individual properties.</strong></p>
+          <p style="margin-top: 6px;">MLS listings are functional and ugly. Speed is premium &mdash; &ldquo;need this before open house Saturday.&rdquo;</p>
+          <p style="margin-top: 6px;" class="price">$5K&ndash;$15K per property</p>
+          <p style="margin-top: 6px;">AI feature: &ldquo;Ask about this property&rdquo; &mdash; neighborhood, schools, commute, what it's like to live here.</p>
+          <p style="margin-top: 6px;"><strong>Bonus:</strong> Repeatable per agent. One agent = 5&ndash;20 properties/year.</p>
+        </div>
+      </div>
+
+      <!-- Event Venues -->
+      <div class="niche">
+        <div class="niche-pin pin-hot">Pinned &mdash; Channel Play</div>
+        <h4>Event Venues</h4>
+        <div class="niche-props">
+          <span class="niche-prop">BOUNDED</span>
+          <span class="niche-prop">HIGH STAKES</span>
+          <span class="niche-prop">WEAK COMPETITION</span>
+        </div>
+        <div class="niche-detail">
+          <p>Wedding venues, banquet halls, conference centers. Bookings $5K&ndash;$100K+ each. <strong>Most venue sites are embarrassingly bad.</strong></p>
+          <p style="margin-top: 6px;" class="price">$2,000&ndash;$5,000</p>
+          <p style="margin-top: 6px;">AI feature: &ldquo;Explore this venue&rdquo; &mdash; helps couples determine fit, surfaces relevant gallery photos.</p>
+          <p style="margin-top: 6px;"><strong>Channel:</strong> Venue &rarr; refers couples &rarr; your wedding service. Lead source AND revenue stream.</p>
+        </div>
+      </div>
+
+      <!-- Therapists -->
+      <div class="niche">
+        <div class="niche-pin pin-warm">Pinned &mdash; Deep Fit</div>
+        <h4>Therapist / Mental Health Practices</h4>
+        <div class="niche-props">
+          <span class="niche-prop">HIGH STAKES</span>
+          <span class="niche-prop">WEAK COMPETITION</span>
+          <span class="niche-prop">DONE-FOR-YOU</span>
+          <span class="niche-prop">COMMUNITY</span>
+        </div>
+        <div class="niche-detail">
+          <p>The website IS the first therapeutic interaction. Clients need to feel safe and understood BEFORE calling.</p>
+          <p style="margin-top: 6px;">Mostly on Psychology Today (profile, not a site) or bad Wix sites. Training cohorts = built-in networks.</p>
+          <p style="margin-top: 6px;" class="price">$2,000&ndash;$5,000</p>
+          <p style="margin-top: 6px;">AI feature: Gentle AI that helps potential clients explore whether this therapist's approach fits their needs. <strong>Reduces no-shows and bad-fit consultations.</strong></p>
+        </div>
+      </div>
+
+      <!-- Real Estate Agents -->
+      <div class="niche">
+        <div class="niche-pin pin-warm">Strong</div>
+        <h4>Real Estate Agents</h4>
+        <div class="niche-props">
+          <span class="niche-prop">TEMPLATE-ABLE</span>
+          <span class="niche-prop">HUGE VOLUME</span>
+          <span class="niche-prop">SPEED</span>
+        </div>
+        <div class="niche-detail">
+          <p>Personal brand sites. ~1.5M licensed agents in US. Switch brokerages, rebrand, launch constantly.</p>
+          <p style="margin-top: 6px;" class="price">$1,500&ndash;$5,000</p>
+        </div>
+      </div>
+
+      <!-- Architecture Firms -->
+      <div class="niche">
+        <div class="niche-pin pin-warm">Proven</div>
+        <h4>Architecture Firms</h4>
+        <div class="niche-props">
+          <span class="niche-prop">PORTFOLIO-DRIVEN</span>
+          <span class="niche-prop">PROVEN (NABIL)</span>
+        </div>
+        <div class="niche-detail">
+          <p>Portfolio + philosophy. One new project inquiry from the site = $50K&ndash;$500K to them.</p>
+          <p style="margin-top: 6px;" class="price">$3,000&ndash;$10,000</p>
+        </div>
+      </div>
+
+      <!-- Airbnb Hosts -->
+      <div class="niche">
+        <div class="niche-pin pin-explore">Explore</div>
+        <h4>Short-term Rental / Airbnb Direct Booking</h4>
+        <div class="niche-props">
+          <span class="niche-prop">BOUNDED</span>
+          <span class="niche-prop">CLEAR ROI</span>
+          <span class="niche-prop">MASSIVE COMMUNITY</span>
+        </div>
+        <div class="niche-detail">
+          <p>Direct bookings save 15&ndash;20% in Airbnb fees. $50K&ndash;$100K/yr property = $7,500&ndash;$20K saved annually. Site pays for itself in weeks.</p>
+          <p style="margin-top: 6px;">AI feature: &ldquo;Ask about this stay&rdquo; &mdash; local recs, check-in, house rules. Replaces host message thread.</p>
+        </div>
+      </div>
+
+      <!-- Memorial Pages -->
+      <div class="niche">
+        <div class="niche-pin pin-explore">Interesting</div>
+        <h4>Obituary / Memorial Pages</h4>
+        <div class="niche-props">
+          <span class="niche-prop">EXTREME URGENCY</span>
+          <span class="niche-prop">CRITICAL SPEED</span>
+          <span class="niche-prop">EMOTIONAL</span>
+        </div>
+        <div class="niche-detail">
+          <p>Needed within 24&ndash;48 hours. ~3M deaths/year in US. Current alternatives feel generic and impersonal.</p>
+          <p style="margin-top: 6px;" class="price">$300&ndash;$1,500</p>
+        </div>
+      </div>
+
+      <!-- Conference/Event Sites -->
+      <div class="niche">
+        <div class="niche-pin pin-explore">Explore</div>
+        <h4>Conference & Event Sites</h4>
+        <div class="niche-props">
+          <span class="niche-prop">TIME-SENSITIVE</span>
+          <span class="niche-prop">REPEATABLE</span>
+          <span class="niche-prop">TERRIBLE STATUS QUO</span>
+        </div>
+        <div class="niche-detail">
+          <p>Most conference sites are TERRIBLE. Date-locked urgency. Same shape, new content. Recurring annually.</p>
+          <p style="margin-top: 6px;" class="price">$3,000&ndash;$10,000</p>
+          <p style="margin-top: 6px;">AI feature: &ldquo;Ask about this event&rdquo; &mdash; schedule, speakers, logistics, accommodations.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="enrichment reveal">
+      <p>The sweet spot is: pages that are (a) structurally predictable, (b) currently overpriced, (c) time-sensitive, and (d) ordered by non-technical buyers. That&rsquo;s the overlap where same-day, AI-powered, felt-sense-guided service demolishes the status quo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 6: BUSINESS SPHERES (Taxonomy) -->
+<!-- ============================================= -->
+<div id="spheres">
+  <div class="section-header reveal">
+    <div class="section-number">06</div>
+    <h2 class="section-title">Business Spheres</h2>
+    <p class="section-desc">The taxonomy of where this service plays. Four spheres, each with its own segments and distribution channels.</p>
+  </div>
+
+  <div class="spheres">
+    <div class="sphere-container reveal">
+      <!-- Event Organization -->
+      <div class="sphere sphere-events">
+        <div class="sphere-title"><span class="sphere-dot"></span> Event Organization</div>
+        <ul class="sphere-segments">
+          <li class="sphere-segment">
+            <strong>Weddings</strong>
+            <div class="sphere-segment-sub">Individuals, Wedding Planners &bull; PRESENTATION & PROCESS</div>
+          </li>
+          <li class="sphere-segment">
+            <strong>Funerals</strong>
+            <div class="sphere-segment-sub">Funeral Homes</div>
+          </li>
+          <li class="sphere-segment">Baby Showers &bull; Coming of Age</li>
+          <li class="sphere-segment">Conferences</li>
+          <li class="sphere-segment">
+            <div class="sphere-segment-sub">Distribution: D2C + Service People</div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Real Estate -->
+      <div class="sphere sphere-realestate">
+        <div class="sphere-title"><span class="sphere-dot"></span> Real Estate</div>
+        <ul class="sphere-segments">
+          <li class="sphere-segment">Agents</li>
+          <li class="sphere-segment">Property Listings</li>
+        </ul>
+      </div>
+
+      <!-- Local Businesses -->
+      <div class="sphere sphere-local">
+        <div class="sphere-title"><span class="sphere-dot"></span> Local Businesses</div>
+        <ul class="sphere-segments">
+          <li class="sphere-segment">Dentists</li>
+          <li class="sphere-segment">Lawyers</li>
+          <li class="sphere-segment">Photographers</li>
+          <li class="sphere-segment">Restaurants</li>
+          <li class="sphere-segment">Therapists</li>
+        </ul>
+      </div>
+
+      <!-- Remote Contractors -->
+      <div class="sphere sphere-remote">
+        <div class="sphere-title"><span class="sphere-dot"></span> Remote Contractors</div>
+        <ul class="sphere-segments">
+          <li class="sphere-segment">
+            <strong>Who:</strong> Coaches, Consultants, Agencies, Marketing Teams
+          </li>
+          <li class="sphere-segment">
+            <strong>What:</strong> Pitch Pages, Delivery Portals, Client Deliverables, Micro Sites
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 7: MARKET TERRAIN -->
+<!-- ============================================= -->
+<div id="market">
+  <div class="section-header reveal">
+    <div class="section-number">07</div>
+    <h2 class="section-title">Market Terrain</h2>
+    <p class="section-desc">Estimated annual US market spend by category. Volume &times; price &times; frequency.</p>
+  </div>
+
+  <div class="market-terrain reveal">
+    <div class="market-bar-chart" id="marketChart">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <div class="enrichment reveal" style="margin-top: 40px;">
+    <p>Biggest opportunities where same-day AI service demolishes the status quo: Campaign Landing Pages (#1 by spend), Property Listing Sites (speed is everything), Event Sites (time-sensitive, predictable), Real Estate Agent Sites (template-perfect), Restaurant Sites (everyone needs one).</p>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 8: TRIGGER MOMENTS -->
+<!-- ============================================= -->
+<div id="triggers">
+  <div class="section-header reveal">
+    <div class="section-number">08</div>
+    <h2 class="section-title">Trigger Moments</h2>
+    <p class="section-desc">When the need becomes urgent. The value of the site decays rapidly with time &mdash; speed IS the product.</p>
+  </div>
+
+  <div class="triggers reveal">
+    <div class="trigger-timeline">
+      <div class="trigger-item tier-1">
+        <div class="trigger-urgency extreme">Extreme Urgency &mdash; Tier 1</div>
+        <div class="trigger-name">Someone Dies &mdash; Memorial Page</div>
+        <div class="trigger-desc">No one plans for this. Current alternatives feel generic. A custom page capturing who they were, built from one conversation. ~3M deaths/year US. <span style="font-family: var(--mono); color: var(--warm);">$75&ndash;$200</span></div>
+      </div>
+      <div class="trigger-item tier-1">
+        <div class="trigger-urgency high">High Urgency &mdash; Tier 1</div>
+        <div class="trigger-name">Just Started a Business &mdash; Need a Website Today</div>
+        <div class="trigger-desc">Filed an LLC, telling people, first question: &ldquo;what's your website?&rdquo; Every day without a site is lost credibility. <span style="font-family: var(--mono); color: var(--warm);">$100&ndash;$300</span></div>
+      </div>
+      <div class="trigger-item tier-1">
+        <div class="trigger-urgency extreme">Extreme Urgency &mdash; Tier 1</div>
+        <div class="trigger-name">Big Client Meeting Tomorrow &mdash; Need to Look Legit</div>
+        <div class="trigger-desc">A $200 site could win a $20K contract. Nothing else can produce a custom, professional site overnight. <span style="font-family: var(--mono); color: var(--warm);">$100&ndash;$300</span></div>
+      </div>
+      <div class="trigger-item tier-1">
+        <div class="trigger-urgency high">High Urgency &mdash; Tier 1</div>
+        <div class="trigger-name">Product Launch on a Deadline</div>
+        <div class="trigger-desc">The launch date doesn't move. Current path: hire a freelancer (weeks, $1K+) or DIY (days). <span style="font-family: var(--mono); color: var(--warm);">$100&ndash;$500</span></div>
+      </div>
+      <div class="trigger-item tier-1">
+        <div class="trigger-urgency high">High Urgency &mdash; Tier 1</div>
+        <div class="trigger-name">Freelancer Needs a Portfolio NOW</div>
+        <div class="trigger-desc">Triggered by &ldquo;can you send me your portfolio?&rdquo; The opportunity has a shelf life of hours. <span style="font-family: var(--mono); color: var(--warm);">$50&ndash;$200</span></div>
+      </div>
+      <div class="trigger-item tier-2">
+        <div class="trigger-urgency high">Tier 2</div>
+        <div class="trigger-name">Running for Local Office</div>
+        <div class="trigger-desc">Thousands of local races annually. Candidates are not tech people. Campaign page from one conversation. <span style="font-family: var(--mono); color: var(--warm);">$100&ndash;$300</span></div>
+      </div>
+      <div class="trigger-item tier-2">
+        <div class="trigger-urgency extreme">Extreme &mdash; Tier 2</div>
+        <div class="trigger-name">Crisis Communication / PR Response</div>
+        <div class="trigger-desc">Something goes wrong publicly, companies need a response page fast. <span style="font-family: var(--mono); color: var(--warm);">$200&ndash;$500</span></div>
+      </div>
+      <div class="trigger-item tier-2">
+        <div class="trigger-urgency extreme">Extreme &mdash; Tier 2</div>
+        <div class="trigger-name">Fundraiser for a Crisis</div>
+        <div class="trigger-desc">GoFundMe is limited in storytelling. A companion page with the full story creates trust and drives more donations. <span style="font-family: var(--mono); color: var(--warm);">$50&ndash;$150</span></div>
+      </div>
+      <div class="trigger-item tier-2">
+        <div class="trigger-urgency medium">Medium-High &mdash; Tier 2</div>
+        <div class="trigger-name">Wedding Website</div>
+        <div class="trigger-desc">Procrastinated then suddenly urgent. Huge market. Zola/The Knot are generic. Couples want their aesthetic. <span style="font-family: var(--mono); color: var(--warm);">$50&ndash;$150</span></div>
+      </div>
+      <div class="trigger-item tier-2">
+        <div class="trigger-urgency high">Tier 2</div>
+        <div class="trigger-name">Event Landing Page</div>
+        <div class="trigger-desc">Event organizers always underestimate how long the website takes. Date-locked. <span style="font-family: var(--mono); color: var(--warm);">$100&ndash;$300</span></div>
+      </div>
+      <div class="trigger-item tier-3">
+        <div class="trigger-urgency high">Tier 3</div>
+        <div class="trigger-name">Selling a House FSBO</div>
+        <div class="trigger-desc">Saving $15K+ in agent commissions, will gladly spend $100&ndash;$200 on a beautiful single-property page.</div>
+      </div>
+      <div class="trigger-item tier-3">
+        <div class="trigger-urgency medium">Tier 3</div>
+        <div class="trigger-name">Author / Book Launch</div>
+        <div class="trigger-desc">Pub date is fixed. Authors are often not technical. Custom page matching the book's aesthetic.</div>
+      </div>
+      <div class="trigger-item tier-3">
+        <div class="trigger-urgency high">Tier 3</div>
+        <div class="trigger-name">Speaker Page</div>
+        <div class="trigger-desc">Triggered by &ldquo;Send me your speaker page.&rdquo; Not having one loses the gig.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="enrichment reveal">
+    <p>Common thread across all triggers: (1) external trigger + real deadline, (2) person is not a web designer, (3) custom matters but perfection doesn't, (4) current alternatives too slow/expensive/generic, (5) same-day delivery is a genuine differentiator.</p>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 9: SCOPE CUTS -->
+<!-- ============================================= -->
+<div id="scope-cuts">
+  <div class="section-header reveal">
+    <div class="section-number">09</div>
+    <h2 class="section-title">Scope Decisions</h2>
+    <p class="section-desc">The WHY behind every cut is the same: complexity kills speed, speed is the moat.</p>
+  </div>
+
+  <div class="scope-cuts">
+    <div class="cuts-grid reveal">
+      <div class="cut-item">
+        <div class="cut-icon">&times;</div>
+        <div>
+          <div class="cut-text"><strong>Cut e-commerce</strong></div>
+          <div class="cut-reason">&ldquo;Everyone's inventory is so different... you need MCP servers to do updates&rdquo;</div>
+        </div>
+      </div>
+      <div class="cut-item">
+        <div class="cut-icon">&times;</div>
+        <div>
+          <div class="cut-text"><strong>Cut coaching/scheduling</strong></div>
+          <div class="cut-reason">&ldquo;She's not going to pay me $1,000... there's no flood of money coming at me&rdquo;</div>
+        </div>
+      </div>
+      <div class="cut-item">
+        <div class="cut-icon">&times;</div>
+        <div>
+          <div class="cut-text"><strong>Cut Shopify people</strong></div>
+          <div class="cut-reason">&ldquo;They're constantly changing and involved... the relationship is very different than Nabil's&rdquo;</div>
+        </div>
+      </div>
+      <div class="cut-item">
+        <div class="cut-icon">&times;</div>
+        <div>
+          <div class="cut-text"><strong>Cut complex backends</strong></div>
+          <div class="cut-reason">No auth, no users, no WordPress. Keeps it AI-producible.</div>
+        </div>
+      </div>
+      <div class="cut-item">
+        <div class="cut-icon" style="color: var(--sage);">&checkmark;</div>
+        <div>
+          <div class="cut-text"><strong>Kept: Static + Airtable</strong></div>
+          <div class="cut-reason">Simple, AI-producible, near-zero maintenance</div>
+        </div>
+      </div>
+      <div class="cut-item">
+        <div class="cut-icon" style="color: var(--sage);">&checkmark;</div>
+        <div>
+          <div class="cut-text"><strong>Kept: AI features</strong></div>
+          <div class="cut-reason">Chat, search, scroll-to-answer &mdash; bounded, novel, high-value</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-callout reveal" style="margin-top: 40px;">
+      <blockquote>
+        The ideal client is the person who does not want to manage anything. They want it done and they want to forget about it.
+      </blockquote>
+      <cite>From the Andrew conversation</cite>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SECTION 10: DECISIONS / OPEN QUESTIONS -->
+<!-- ============================================= -->
+<div id="decisions">
+  <div class="section-header reveal">
+    <div class="section-number">10</div>
+    <h2 class="section-title">What's Decided & What's Open</h2>
+  </div>
+
+  <div class="decisions">
+    <div class="decision-strip reveal">
+      <div class="decision-col">
+        <h3>Decided</h3>
+        <ul class="decided-list">
+          <li class="decided-item">
+            <strong>Core service = midwifing coherence</strong>
+            Not a website business. Sitting with someone, feeling their world, making it real.
+          </li>
+          <li class="decided-item">
+            <strong>Start with wish-fulfilling jewel, not weddings</strong>
+            Simpler, proven (Nabil), warm leads exist. Let it be shaped by real encounters.
+          </li>
+          <li class="decided-item">
+            <strong>No e-commerce, no complex backends, no Shopify people</strong>
+            Complexity kills speed. Speed is the moat.
+          </li>
+          <li class="decided-item">
+            <strong>Static + Airtable-backed sites</strong>
+            AI-producible, near-zero maintenance.
+          </li>
+          <li class="decided-item">
+            <strong>AI features are a genuine technical moat</strong>
+            Chat-against-site, intake screening, smart portfolio.
+          </li>
+          <li class="decided-item">
+            <strong>Recording-to-AI pipeline = long-term moat</strong>
+            Record every conversation. Don't build the AI version yet. Product is you, human, on a call.
+          </li>
+          <li class="decided-item">
+            <strong>Simple pricing</strong>
+            One price to build, one to maintain, one to change. Three numbers.
+          </li>
+        </ul>
+      </div>
+      <div class="decision-col">
+        <h3>Open</h3>
+        <ul class="open-list">
+          <li class="open-item">
+            <strong>Which niches to prioritize beyond the first few?</strong>
+            Real estate, event venues, therapists all have strong structural fit. Which to pursue first?
+          </li>
+          <li class="open-item">
+            <strong>Exact pricing</strong>
+            $1,000 too low? $1,500 founding customer? $3K&ndash;$5K normal? Needs real encounters to calibrate.
+          </li>
+          <li class="open-item">
+            <strong>Wedding track timing</strong>
+            When to go deeper? After how many general clients? What research still needed?
+          </li>
+          <li class="open-item">
+            <strong>The AI-enabling angle</strong>
+            &ldquo;AI first&rdquo; felt sense &mdash; really enabling clients, not just building for them. What does that mean concretely?
+          </li>
+          <li class="open-item">
+            <strong>Trigger-based vs. relationship-based positioning</strong>
+            &ldquo;We deliver custom overnight&rdquo; vs. &ldquo;we do beautiful custom work.&rdquo; Different positioning, different clients.
+          </li>
+          <li class="open-item">
+            <strong>Scale model</strong>
+            Stay artisanal (you on every call) or build toward AI replication? When does the transition happen?
+          </li>
+          <li class="open-item">
+            <strong>Memorial pages &mdash; pursue or not?</strong>
+            Extreme urgency + emotional depth fits the sensing skill. But low price point and heavy emotional labor.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /canvas -->
+
+<!-- ============================================= -->
+<!-- FOOTER -->
+<!-- ============================================= -->
+<footer class="page-footer">
+  <p>The Whole Case &bull; A thinking surface &bull; March 2026</p>
+</footer>
+
+<script>
+// === Market Data Chart ===
+const marketData = [
+  { label: 'Campaign Landing Pages', value: 3000, display: '~$3B+', bar: 'bar-warm' },
+  { label: 'RE Agent Personal Sites', value: 1500, display: '~$1.5B+', bar: 'bar-rust' },
+  { label: 'Small Business (services)', value: 1200, display: '~$1.2B+', bar: 'bar-sage' },
+  { label: 'Restaurant Websites', value: 800, display: '~$800M+', bar: 'bar-sage' },
+  { label: 'Law Firm Sites', value: 700, display: '~$700M+', bar: 'bar-dusk' },
+  { label: 'Medical/Dental Practice', value: 600, display: '~$600M+', bar: 'bar-dusk' },
+  { label: 'Property Listing Sites', value: 500, display: '~$500M+', bar: 'bar-rust' },
+  { label: 'New Development Sites', value: 500, display: '~$500M+', bar: 'bar-rust' },
+  { label: 'Conference/Event Sites', value: 450, display: '~$450M+', bar: 'bar-warm' },
+  { label: 'Wedding Websites', value: 400, display: '~$400M+', bar: 'bar-warm' },
+  { label: 'Career/Recruiting Pages', value: 350, display: '~$350M+', bar: 'bar-slate' },
+  { label: 'Personal Brand/Portfolio', value: 350, display: '~$350M+', bar: 'bar-slate' },
+  { label: 'Product Launch/Microsites', value: 300, display: '~$300M+', bar: 'bar-dusk' },
+  { label: 'Fund Marketing (Finance)', value: 300, display: '~$300M+', bar: 'bar-dusk' },
+  { label: 'Nonprofit Campaign Pages', value: 250, display: '~$250M+', bar: 'bar-sage' },
+];
+
+const maxVal = Math.max(...marketData.map(d => d.value));
+const chartEl = document.getElementById('marketChart');
+
+marketData.forEach(d => {
+  const row = document.createElement('div');
+  row.className = 'market-bar';
+  row.innerHTML = `
+    <div class="market-bar-label">${d.label}</div>
+    <div class="market-bar-fill-track">
+      <div class="market-bar-fill ${d.bar}" data-width="${(d.value / maxVal * 100).toFixed(1)}" style="width: 0%"></div>
+    </div>
+    <div class="market-bar-value">${d.display}</div>
+  `;
+  chartEl.appendChild(row);
+});
+
+// === Intersection Observer for reveals + bar animations ===
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+
+      // Animate bars if this is the market chart
+      const bars = entry.target.querySelectorAll('.market-bar-fill');
+      if (bars.length) {
+        bars.forEach((bar, i) => {
+          setTimeout(() => {
+            bar.style.width = bar.dataset.width + '%';
+          }, i * 60);
         });
+      }
 
-        marked.setOptions({ breaks: false, gfm: true });
+      observer.unobserve(entry.target);
+    }
+  });
+}, {
+  threshold: 0.15,
+  rootMargin: '0px 0px -60px 0px'
+});
 
-        // Parse YAML-like frontmatter
-        function parseFrontmatter(raw) {
-            const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-            if (!match) return { meta: {}, content: raw };
-            const meta = {};
-            match[1].split('\n').forEach(line => {
-                const idx = line.indexOf(':');
-                if (idx > 0) {
-                    meta[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-                }
-            });
-            return { meta, content: match[2] };
-        }
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Render content split into cards by ### headings
-        function renderCards(md) {
-            const trimmed = md.trim();
-            if (!trimmed) return '<div class="column-empty">Empty — add content to this file</div>';
+// === Smooth scroll for nav links ===
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
 
-            // Split by ### headings, keeping content before first heading as its own chunk
-            const chunks = trimmed.split(/(?=^### )/m).filter(s => s.trim());
-
-            return chunks.map(chunk => {
-                const html = marked.parse(chunk.trim());
-                return '<div class="card">' + html + '</div>';
-            }).join('');
-        }
-
-        // Render as hierarchical outline (Workflowy-style)
-        function renderOutline(md) {
-            const trimmed = md.trim();
-            if (!trimmed) return '<div class="column-empty">Empty — add content to this file</div>';
-            return '<div class="outline">' + marked.parse(trimmed) + '</div>';
-        }
-
-        // Render as prose
-        function renderProse(md) {
-            const trimmed = md.trim();
-            if (!trimmed) return '<div class="column-empty">Empty — add content to this file</div>';
-            return '<div class="prose">' + marked.parse(trimmed) + '</div>';
-        }
-
-        // Build the board
-        const board = document.getElementById('board');
-        const sorted = Object.entries(modules).sort(([a], [b]) => a.localeCompare(b));
-
-        for (const [path, raw] of sorted) {
-            const { meta, content } = parseFrontmatter(raw);
-
-            const col = document.createElement('div');
-            col.className = 'column';
-            if (meta.color) col.style.setProperty('--accent', meta.color);
-
-            // Title
-            const title = document.createElement('h2');
-            title.className = 'column-title';
-            const fallbackTitle = path.split('/').pop()
-                .replace(/^\d+-/, '')
-                .replace('.md', '')
-                .replace(/-/g, ' ');
-            title.textContent = meta.title || fallbackTitle;
-            col.appendChild(title);
-
-            // Body
-            const body = document.createElement('div');
-            body.className = 'column-body';
-
-            const style = (meta.style || 'outline').trim();
-            switch (style) {
-                case 'cards':
-                    body.innerHTML = renderCards(content);
-                    break;
-                case 'prose':
-                    body.innerHTML = renderProse(content);
-                    break;
-                case 'outline':
-                default:
-                    body.innerHTML = renderOutline(content);
-                    break;
-            }
-
-            col.appendChild(body);
-            board.appendChild(col);
-        }
-
-        // Fade in — no flash
-        document.body.classList.add('loaded');
-    </script>
 </body>
 </html>
