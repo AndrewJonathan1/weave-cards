@@ -1479,6 +1479,9 @@ function openHandleDB() {
   });
 }
 async function storeFileHandle(handle) {
+  // Always save filename to localStorage first (fast, reliable fallback)
+  localStorage.setItem('canvas-sync-filename', handle.name);
+  console.log('[sync] filename stored in localStorage:', handle.name);
   try {
     const db = await openHandleDB();
     await new Promise((resolve, reject) => {
@@ -1488,9 +1491,7 @@ async function storeFileHandle(handle) {
       tx.onerror = () => { console.error('[sync] IndexedDB store failed:', tx.error); reject(tx.error); };
       tx.onabort = () => { console.error('[sync] IndexedDB store aborted:', tx.error); reject(tx.error); };
     });
-    localStorage.setItem('canvas-sync-filename', handle.name);
-    console.log('[sync] filename stored in localStorage:', handle.name);
-  } catch (e) { console.warn('[sync] failed to store handle:', e); }
+  } catch (e) { console.warn('[sync] failed to store handle in IndexedDB:', e); }
 }
 async function loadFileHandle() {
   try {

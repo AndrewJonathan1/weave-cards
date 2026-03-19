@@ -9,26 +9,25 @@ const TEST_DATA = JSON.stringify({
   connections: []
 });
 
-// Helper: select a file via native Save dialog using AppleScript
-// showSaveFilePicker opens a Save dialog — we type the path and confirm
+// Helper: open an existing file via native Open dialog using AppleScript
+// openExistingFile() calls showOpenFilePicker which opens an Open dialog
 async function selectFileViaNativeDialog(page, filePath) {
-  // Click "Select File" button on the connect overlay
-  await page.locator('#connect-panel button').click();
-  await page.waitForTimeout(1500);
+  // Click "Open Existing" button on the connect overlay
+  await page.getByRole('button', { name: 'Open Existing' }).click();
+  await page.waitForTimeout(2000);
 
-  // Open "Go to folder" sheet (Cmd+Shift+G)
-  execSync(`osascript -e 'tell application "System Events"' -e 'keystroke "g" using {command down, shift down}' -e 'end tell'`);
-  await page.waitForTimeout(1000);
+  // Open "Go to folder" sheet (Cmd+Shift+G) — retry a few times in case dialog is slow
+  for (let i = 0; i < 3; i++) {
+    execSync(`osascript -e 'tell application "System Events"' -e 'keystroke "g" using {command down, shift down}' -e 'end tell'`);
+    await page.waitForTimeout(800);
+  }
+  await page.waitForTimeout(500);
 
   // Type the file path and press Enter to navigate
   execSync(`osascript -e 'tell application "System Events"' -e 'keystroke "${filePath}"' -e 'delay 0.5' -e 'keystroke return' -e 'end tell'`);
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(2000);
 
-  // Press Enter/Return to confirm (Save/Open)
-  execSync(`osascript -e 'tell application "System Events"' -e 'keystroke return' -e 'end tell'`);
-  await page.waitForTimeout(1000);
-
-  // Handle possible "Replace" confirmation dialog
+  // Press Enter/Return to confirm (Open)
   execSync(`osascript -e 'tell application "System Events"' -e 'keystroke return' -e 'end tell'`);
   await page.waitForTimeout(2000);
 }
