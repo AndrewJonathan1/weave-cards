@@ -89,7 +89,12 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 .card:hover { box-shadow: 0 4px 16px var(--card-shadow-hover); }
 .card.dragging { cursor: grabbing; }
 .card.editing { cursor: text; user-select: auto; border-color: var(--link); }
-.card.selected { border: 2px solid var(--link); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), 0 4px 16px var(--card-shadow-hover); }
+.card.selected { border: 2px solid var(--link); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), 0 4px 16px var(--card-shadow-hover); cursor: grab; }
+.card.selected.dragging { cursor: grabbing; }
+#rubber-band {
+  position: fixed; border: 1.5px solid var(--link); background: rgba(37, 99, 235, 0.08);
+  pointer-events: none; z-index: 99; display: none;
+}
 .card-delete {
   display: none; background: none; border: none; cursor: pointer; font-size: 14px;
   color: var(--text-muted); padding: 2px 4px; line-height: 1; position: absolute;
@@ -247,6 +252,7 @@ html.dark #sync-btn.saved {
   <button id="theme-toggle" onclick="toggleTheme()"></button>
   <span id="zoom-display">100%</span>
 </div>
+<div id="rubber-band"></div>
 <div id="canvas-viewport">
   <div id="canvas">
     <svg id="svg-layer"></svg>
@@ -320,6 +326,15 @@ COLORS.forEach((col, i) => {
     toolbarColors.querySelector('.active')?.classList.remove('active');
     sw.classList.add('active');
     activeColorIndex = i;
+    // Apply color to all selected cards
+    if (selectedCards.size > 0) {
+      var hex = getColorHex(col);
+      selectedCards.forEach(function(id) {
+        var c = state.cards.find(function(card) { return card.id === id; });
+        if (c) { c.color = hex; var el = document.getElementById(id); if (el) el.style.background = hex; }
+      });
+      scheduleSave();
+    }
   };
   toolbarColors.appendChild(sw);
   tbSwatches.push(sw);
@@ -359,6 +374,9 @@ function updateTransform() {
   viewport.style.backgroundSize = `${gs}px ${gs}px`;
   viewport.style.backgroundPosition = `${-camX * zoom}px ${-camY * zoom}px`;
   zoomDisplay.textContent = Math.round(zoom * 100) + '%';
+  // Persist camera in state
+  state.camera = { x: camX, y: camY, zoom: zoom };
+  scheduleSave();
 }
 
 // Convert screen coords to canvas (world) coords
@@ -788,21 +806,156 @@ viewport.addEventListener('wheel', (e) => {
   }
 }, { passive: false });
 
-// Click on empty canvas stops any active editing and clears selection
+// --- Rubber band (marquee) selection ---
+var rubberBandEl = document.getElementById('rubber-band');
+var isRubberBanding = false;
+var rbStartX = 0, rbStartY = 0;
+
 viewport.addEventListener('mousedown', (e) => {
-  if (!e.target.closest('.card') && !e.target.closest('#toolbar')) {
-    stopEditing();
-    clearSelection();
+  if (e.button !== 0) return;
+  if (e.target.closest('.card') || e.target.closest('#toolbar')) return;
+  if (spaceHeld || isPanning) return;
+
+  stopEditing();
+
+  rbStartX = e.clientX;
+  rbStartY = e.clientY;
+  isRubberBanding = false;
+
+  if (!e.shiftKey) clearSelection();
+
+  function onMove(ev) {
+    var dx = ev.clientX - rbStartX, dy = ev.clientY - rbStartY;
+    if (!isRubberBanding && Math.hypot(dx, dy) > 4) {
+      isRubberBanding = true;
+      rubberBandEl.style.display = 'block';
+    }
+    if (isRubberBanding) {
+      var x = Math.min(rbStartX, ev.clientX);
+      var y = Math.min(rbStartY, ev.clientY);
+      var w = Math.abs(ev.clientX - rbStartX);
+      var h = Math.abs(ev.clientY - rbStartY);
+      rubberBandEl.style.left = x + 'px';
+      rubberBandEl.style.top = y + 'px';
+      rubberBandEl.style.width = w + 'px';
+      rubberBandEl.style.height = h + 'px';
+    }
   }
+
+  function onUp(ev) {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    rubberBandEl.style.display = 'none';
+
+    if (isRubberBanding) {
+      // Convert rubber band screen rect to world coords
+      var rbWorld1 = screenToWorld(Math.min(rbStartX, ev.clientX), Math.min(rbStartY, ev.clientY));
+      var rbWorld2 = screenToWorld(Math.max(rbStartX, ev.clientX), Math.max(rbStartY, ev.clientY));
+
+      state.cards.forEach(function(c) {
+        // Check overlap: card rect vs rubber band rect (world coords)
+        var cardRight = c.x + c.w;
+        var cardBottom = c.y + c.h;
+        if (c.x < rbWorld2.x && cardRight > rbWorld1.x && c.y < rbWorld2.y && cardBottom > rbWorld1.y) {
+          selectCard(c.id);
+        }
+      });
+    }
+    isRubberBanding = false;
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 }, true);
 
-// Delete key deletes selected cards
+// --- Selection utilities ---
+function selectAll() {
+  state.cards.forEach(function(c) { selectCard(c.id); });
+}
+
+function duplicateSelected() {
+  if (selectedCards.size === 0) return;
+  var newIds = [];
+  var idMap = {};
+  selectedCards.forEach(function(id) {
+    var orig = state.cards.find(function(c) { return c.id === id; });
+    if (!orig) return;
+    var copy = JSON.parse(JSON.stringify(orig));
+    copy.id = uid();
+    copy.x += 30;
+    copy.y += 30;
+    idMap[id] = copy.id;
+    state.cards.push(copy);
+    renderCard(copy);
+    newIds.push(copy.id);
+  });
+  // Duplicate connections between selected cards
+  state.connections.forEach(function(cn) {
+    if (idMap[cn.from] && idMap[cn.to]) {
+      state.connections.push({ from: idMap[cn.from], to: idMap[cn.to] });
+    }
+  });
+  renderConnections();
+  // Select the new copies instead
+  clearSelection();
+  newIds.forEach(function(id) { selectCard(id); });
+  scheduleSave();
+}
+
+function nudgeSelected(dx, dy) {
+  if (selectedCards.size === 0) return;
+  selectedCards.forEach(function(id) {
+    var c = state.cards.find(function(card) { return card.id === id; });
+    if (!c) return;
+    c.x += dx;
+    c.y += dy;
+    var el = document.getElementById(id);
+    if (el) { el.style.left = c.x + 'px'; el.style.top = c.y + 'px'; }
+  });
+  renderConnections();
+  scheduleSave();
+}
+
+// --- Keyboard shortcuts ---
 document.addEventListener('keydown', (e) => {
-  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCards.size > 0
-      && !e.target.matches('textarea,input,[contenteditable]')
-      && !document.querySelector('.card.editing')) {
+  var isEditing = !!document.querySelector('.card.editing');
+  var inInput = e.target.matches('textarea,input,[contenteditable]');
+
+  // Delete / Backspace — delete selected cards
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCards.size > 0 && !inInput && !isEditing) {
     e.preventDefault();
     deleteSelectedCards();
+    return;
+  }
+
+  // Cmd+A — select all
+  if ((e.metaKey || e.ctrlKey) && e.key === 'a' && !inInput && !isEditing) {
+    e.preventDefault();
+    selectAll();
+    return;
+  }
+
+  // Cmd+D — duplicate selected
+  if ((e.metaKey || e.ctrlKey) && e.key === 'd' && !inInput && !isEditing && selectedCards.size > 0) {
+    e.preventDefault();
+    duplicateSelected();
+    return;
+  }
+
+  // Escape — deselect all (if not editing)
+  if (e.key === 'Escape' && !isEditing && selectedCards.size > 0) {
+    clearSelection();
+    return;
+  }
+
+  // Arrow keys — nudge selected cards
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !inInput && !isEditing && selectedCards.size > 0) {
+    e.preventDefault();
+    var step = 10;
+    var dx = e.key === 'ArrowRight' ? step : e.key === 'ArrowLeft' ? -step : 0;
+    var dy = e.key === 'ArrowDown' ? step : e.key === 'ArrowUp' ? -step : 0;
+    nudgeSelected(dx, dy);
+    return;
   }
 });
 
@@ -961,7 +1114,9 @@ async function syncToFile() {
         if (loaded.cards && loaded.cards.length > 0) {
           state = loaded;
           if (!state.connections) state.connections = [];
+          if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
           renderAll();
+          updateTransform();
         }
       } catch (e) { console.warn('File contained invalid JSON, starting fresh'); }
     }
@@ -1014,10 +1169,10 @@ async function writeToFile() {
     updateSyncStatus('Saved', true);
   } catch (e) {
     console.error('Save failed:', e);
-    if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
+    if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError') {
       fileHandle = null;
       clearFileHandle();
-      updateSyncStatus('Save failed — re-sync needed');
+      updateSyncStatus('File lost — re-sync needed');
     }
   } finally {
     isWriting = false;
@@ -1080,6 +1235,12 @@ async function mergeFile() {
 if (loadFromLocalStorage()) {
   renderAll();
 }
+// Restore camera if saved
+if (state.camera) {
+  camX = state.camera.x || 0;
+  camY = state.camera.y || 0;
+  zoom = state.camera.zoom || 1;
+}
 updateTransform();
 
 // Reconnect to previously synced file
@@ -1109,7 +1270,9 @@ updateTransform();
           if (loaded.cards && loaded.cards.length > 0) {
             state = loaded;
             if (!state.connections) state.connections = [];
+            if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
             renderAll();
+            updateTransform();
           }
         } catch (e) { /* invalid JSON in file */ }
       }
@@ -1122,6 +1285,8 @@ updateTransform();
     }
   } catch (e) {
     console.warn('[sync] reconnect failed:', e);
+    fileHandle = null;
+    clearFileHandle();
     syncLabel.textContent = 'Sync to File';
     syncBtn.classList.remove('synced');
   }
