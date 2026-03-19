@@ -333,12 +333,12 @@ const H = (t) => '<span class="md-h">' + t + '</span>';
 
 function renderMarkdown(src) {
   if (!src) return '';
+  // Split on \n\n but preserve them for cursor mapping.
+  // Don't use trim() — trailing newlines are significant.
   const blocks = src.split('\n\n');
   return blocks.map((block, i) => {
-    // Emit hidden \n\n between blocks for cursor mapping
     const sep = i > 0 ? H('\n\n') : '';
-    block = block.trim();
-    if (!block) return sep;
+    if (!block) return sep + '<p><br></p>';
     // Headings
     const hm = block.match(/^(#{1,3}) /);
     if (hm) {
@@ -349,13 +349,17 @@ function renderMarkdown(src) {
     }
     // Bullet lists
     const lines = block.split('\n');
-    if (lines.every(l => /^\s*[-*] /.test(l))) {
-      return sep + '<ul>' + lines.map((l, j) => {
-        const nlSep = j > 0 ? H('\n') : '';
-        const m = l.match(/^(\s*[-*] )/);
-        const prefix = m ? H(esc(m[1])) : '';
-        return nlSep + '<li>' + prefix + inlineRender(l.replace(/^\s*[-*] /, '')) + '</li>';
-      }).join('') + '</ul>';
+    if (lines.every(l => /^\s*[-*] /.test(l) || l === '')) {
+      const realLines = lines.filter(l => l !== '');
+      if (realLines.length > 0 && realLines.every(l => /^\s*[-*] /.test(l))) {
+        return sep + '<ul>' + lines.map((l, j) => {
+          const nlSep = j > 0 ? H('\n') : '';
+          if (l === '') return nlSep;
+          const m = l.match(/^(\s*[-*] )/);
+          const prefix = m ? H(esc(m[1])) : '';
+          return nlSep + '<li>' + prefix + inlineRender(l.replace(/^\s*[-*] /, '')) + '</li>';
+        }).join('') + '</ul>';
+      }
     }
     // Paragraph (single newlines become visible <br>)
     return sep + '<p>' + lines.map((l, j) => {
@@ -512,25 +516,62 @@ function startEditing(c, cardEl) {
   cardEl.classList.add('editing');
 
   function renderWithCursor() {
-    body.innerHTML = renderMarkdown(raw) || '<br>';
-    // Walk all text nodes to find cursor position. Since md-h spans preserve
-    // a 1:1 char mapping with the raw text, we just count characters.
+    body.innerHTML = renderMarkdown(raw) || '<p><br></p>';
     let remaining = ta.selectionStart;
     const cursor = document.createElement('span');
     cursor.className = 'cursor';
+    // When cursor position falls inside a hidden (md-h) span, we set
+    // deferred=true and keep walking until we find a visible spot.
+    let deferred = false;
+
+    function placeCursor(parent, before) {
+      parent.insertBefore(cursor, before || null);
+      deferred = false;
+      return true;
+    }
 
     function walk(node) {
       if (node.nodeType === 3) {
-        if (remaining <= node.length) {
-          const after = node.splitText(remaining);
-          node.parentNode.insertBefore(cursor, after);
-          return true;
+        const inHidden = node.parentNode.classList?.contains('md-h');
+        if (inHidden) {
+          if (remaining <= node.length) {
+            remaining = 0;
+            deferred = true;
+            return false;
+          }
+          remaining -= node.length;
+        } else {
+          if (deferred) return placeCursor(node.parentNode, node);
+          if (remaining <= node.length) {
+            const after = node.splitText(remaining);
+            return placeCursor(node.parentNode, after);
+          }
+          remaining -= node.length;
         }
-        remaining -= node.length;
       } else if (node.nodeType === 1) {
+        const tag = node.tagName;
+        const isHidden = node.classList?.contains('md-h');
+        // Skip into hidden spans to count chars, but don't place cursor there
+        if (isHidden) {
+          for (const child of Array.from(node.childNodes)) {
+            walk(child); // just count, ignore return
+          }
+          return false;
+        }
+        // BR: if deferred, place cursor right after the <br>
+        if (tag === 'BR') {
+          if (deferred) return placeCursor(node.parentNode, node.nextSibling);
+          return false;
+        }
+        // For visible block/inline elements: if deferred, place at start
+        if (deferred) {
+          return placeCursor(node, node.firstChild || null);
+        }
         for (const child of Array.from(node.childNodes)) {
           if (walk(child)) return true;
         }
+        // If deferred after exhausting children, place at end of this element
+        if (deferred) return placeCursor(node, null);
       }
       return false;
     }
