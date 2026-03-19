@@ -7,4 +7,20 @@ module.exports = defineConfig({
     headless: true,
     viewport: { width: 1280, height: 720 },
   },
+  projects: [
+    {
+      name: 'e2e-headed',
+      testMatch: /file-open-e2e/,
+      use: {
+        headless: false,
+        launchOptions: {
+          args: ['--enable-features=FileSystemAccessAPI', '--disable-features=FileSystemAccessAPIPermissionPrompt'],
+        },
+      },
+    },
+    {
+      name: 'default',
+      testIgnore: /file-open-e2e/,
+    },
+  ],
 });
