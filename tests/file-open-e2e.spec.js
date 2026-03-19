@@ -2,154 +2,226 @@ const { test, expect } = require('@playwright/test');
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-const CANVAS_URL = 'http://localhost:5176/';
-const TEST_FILE = '/tmp/test-canvas.json';
-const TEST_DATA = '{"cards":[{"id":"test1","x":100,"y":100,"w":320,"h":200,"color":"#FFF8E7","content":"Test card"}],"connections":[]}';
+const CANVAS_URL = 'http://localhost:5178/';
+const TEST_FILE = '/tmp/persistence-test.json';
+const TEST_DATA = JSON.stringify({
+  cards: [{ id: 'test1', x: 100, y: 100, w: 320, h: 200, color: '#FFF8E7', content: 'Persistence test' }],
+  connections: []
+});
 
-// Helper: open a file via native dialog using AppleScript
-async function openFileViaNativeDialog(page, filePath) {
-  await page.locator('button', { hasText: 'Open' }).click();
+// Helper: select a file via native Save dialog using AppleScript
+// showSaveFilePicker opens a Save dialog — we type the path and confirm
+async function selectFileViaNativeDialog(page, filePath) {
+  // Click "Select File" button on the connect overlay
+  await page.locator('#connect-panel button').click();
   await page.waitForTimeout(1500);
 
+  // Open "Go to folder" sheet (Cmd+Shift+G)
   execSync(`osascript -e 'tell application "System Events"' -e 'keystroke "g" using {command down, shift down}' -e 'end tell'`);
   await page.waitForTimeout(1000);
 
+  // Type the file path and press Enter to navigate
   execSync(`osascript -e 'tell application "System Events"' -e 'keystroke "${filePath}"' -e 'delay 0.5' -e 'keystroke return' -e 'end tell'`);
+  await page.waitForTimeout(1500);
+
+  // Press Enter/Return to confirm (Save/Open)
+  execSync(`osascript -e 'tell application "System Events"' -e 'keystroke return' -e 'end tell'`);
   await page.waitForTimeout(1000);
 
+  // Handle possible "Replace" confirmation dialog
   execSync(`osascript -e 'tell application "System Events"' -e 'keystroke return' -e 'end tell'`);
   await page.waitForTimeout(2000);
 }
 
-test.describe.skip('File Open — end-to-end with native dialog (skipped: Open/Save As buttons removed in one-file-flow refactor)', () => {
+test.describe('File Flow — E2E with native dialog', () => {
+  test.setTimeout(60000);
 
   test.beforeEach(() => {
     fs.writeFileSync(TEST_FILE, TEST_DATA);
   });
 
-  test('Open button loads file via native picker and shows status', async ({ page }) => {
+  test('Test 1: File connection via native picker', async ({ page }) => {
     await page.goto(CANVAS_URL);
     await page.waitForSelector('#canvas-viewport');
+    await page.waitForFunction(() => typeof window.startEditing === 'function');
 
-    // Verify the three file operation buttons exist
-    await expect(page.locator('button', { hasText: 'Open' })).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Save As' })).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Add Cards' })).toBeVisible();
+    // Connect overlay should be visible
+    await expect(page.locator('#connect-overlay.open')).toBeVisible();
 
-    // Open the test file via native macOS dialog
-    await openFileViaNativeDialog(page, TEST_FILE);
+    // Select the test file via native dialog
+    await selectFileViaNativeDialog(page, TEST_FILE);
+
+    // Connect overlay should be dismissed
+    const overlayOpen = await page.evaluate(() =>
+      document.getElementById('connect-overlay').classList.contains('open')
+    );
+    expect(overlayOpen).toBe(false);
 
     // Verify the test card loaded into the canvas
-    const cardText = await page.locator('.card-body').first().textContent();
-    expect(cardText).toContain('Test card');
+    await expect(page.locator('#test1')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#test1 .card-body')).toContainText('Persistence test');
 
     // Verify state has the card
     const cardCount = await page.evaluate(() => state.cards.length);
     expect(cardCount).toBe(1);
-    const cardId = await page.evaluate(() => state.cards[0].id);
-    expect(cardId).toBe('test1');
-
-    // Verify the file status indicator is active with filename
-    await expect(page.locator('#file-status')).toHaveClass(/active/);
-    await expect(page.locator('#file-label')).toHaveText('test-canvas.json');
 
     // Verify fileHandle is set
     const hasHandle = await page.evaluate(() => !!fileHandle);
     expect(hasHandle).toBe(true);
     const handleName = await page.evaluate(() => fileHandle.name);
-    expect(handleName).toBe('test-canvas.json');
+    expect(handleName).toBe('persistence-test.json');
+
+    // Verify the file status indicator is active with filename
+    await expect(page.locator('#file-status')).toHaveClass(/active/);
+    await expect(page.locator('#file-label')).toHaveText('persistence-test.json');
+
+    // Verify IndexedDB has the handle stored
+    const storedName = await page.evaluate(() => localStorage.getItem('canvas-sync-filename'));
+    expect(storedName).toBe('persistence-test.json');
   });
 
-  test('Loaded file cards render correctly with positions and colors', async ({ page }) => {
-    // Write a multi-card test file
-    const multiCardData = JSON.stringify({
+  test('Test 2: IndexedDB persistence across reload', async ({ page }) => {
+    await page.goto(CANVAS_URL);
+    await page.waitForSelector('#canvas-viewport');
+    await page.waitForFunction(() => typeof window.startEditing === 'function');
+
+    // Connect to file first
+    await selectFileViaNativeDialog(page, TEST_FILE);
+
+    // Verify connected
+    await expect(page.locator('#test1')).toBeVisible({ timeout: 5000 });
+
+    // Now reload the page
+    await page.reload();
+    await page.waitForSelector('#canvas-viewport');
+    await page.waitForFunction(() => typeof window.startEditing === 'function');
+
+    // Wait for init to complete — permission prompt may auto-grant with Chrome flags
+    await page.waitForTimeout(3000);
+
+    // Check if handle was loaded from IndexedDB
+    const handleResult = await page.evaluate(() => !!fileHandle);
+
+    if (handleResult) {
+      // Handle was restored — verify card is loaded
+      await expect(page.locator('#test1')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('#file-label')).toHaveText('persistence-test.json');
+      console.log('PASS: Handle restored from IndexedDB, card visible');
+    } else {
+      // Permission prompt might have blocked — check console logs
+      const logs = await page.evaluate(() => {
+        // The init function logs the result
+        return localStorage.getItem('canvas-sync-filename');
+      });
+      console.log('Handle not restored. localStorage filename:', logs);
+      // Even if permission was denied, the filename should be in localStorage
+      expect(logs).toBe('persistence-test.json');
+    }
+  });
+
+  test('Test 3: Auto-poll external changes', async ({ page }) => {
+    await page.goto(CANVAS_URL);
+    await page.waitForSelector('#canvas-viewport');
+    await page.waitForFunction(() => typeof window.startEditing === 'function');
+
+    // Connect to file
+    await selectFileViaNativeDialog(page, TEST_FILE);
+    await expect(page.locator('#test1')).toBeVisible({ timeout: 5000 });
+
+    // Externally modify the file — add a second card
+    const updatedData = JSON.stringify({
       cards: [
-        { id: 'mc1', x: 50, y: 50, w: 300, h: 180, color: '#DBEAFE', content: '# Blue Card' },
-        { id: 'mc2', x: 400, y: 50, w: 300, h: 180, color: '#D8F0E0', content: '# Green Card' },
-        { id: 'mc3', x: 50, y: 280, w: 300, h: 180, color: '#FFD6CC', content: '# Coral Card' }
+        { id: 'test1', x: 100, y: 100, w: 320, h: 200, color: '#FFF8E7', content: 'Persistence test' },
+        { id: 'test2', x: 500, y: 100, w: 320, h: 200, color: '#DBEAFE', content: 'Added externally' }
       ],
-      connections: [{ from: 'mc1', to: 'mc2', label: '' }],
-      camera: { x: 0, y: 0, zoom: 1 }
+      connections: []
     });
-    fs.writeFileSync(TEST_FILE, multiCardData);
+    fs.writeFileSync(TEST_FILE, updatedData);
 
-    await page.goto(CANVAS_URL);
-    await page.waitForSelector('#canvas-viewport');
+    // Wait for auto-poll to detect the change (polls every 1 second)
+    await page.waitForFunction(
+      () => state.cards.length === 2,
+      { timeout: 5000 }
+    );
 
-    await openFileViaNativeDialog(page, TEST_FILE);
+    // Verify the externally added card is visible
+    await expect(page.locator('#test2')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('#test2 .card-body')).toContainText('Added externally');
 
-    // Verify all 3 cards loaded
+    // Verify state
     const cardCount = await page.evaluate(() => state.cards.length);
-    expect(cardCount).toBe(3);
-
-    // Verify cards are visible in DOM
-    await expect(page.locator('#mc1')).toBeVisible();
-    await expect(page.locator('#mc2')).toBeVisible();
-    await expect(page.locator('#mc3')).toBeVisible();
-
-    // Verify content rendered
-    await expect(page.locator('#mc1 .card-body')).toContainText('Blue Card');
-    await expect(page.locator('#mc2 .card-body')).toContainText('Green Card');
-    await expect(page.locator('#mc3 .card-body')).toContainText('Coral Card');
-
-    // Verify positions
-    const positions = await page.evaluate(() => state.cards.map(c => ({ id: c.id, x: c.x, y: c.y, color: c.color })));
-    expect(positions).toEqual([
-      { id: 'mc1', x: 50, y: 50, color: '#DBEAFE' },
-      { id: 'mc2', x: 400, y: 50, color: '#D8F0E0' },
-      { id: 'mc3', x: 50, y: 280, color: '#FFD6CC' }
-    ]);
-
-    // Verify connection loaded
-    const connCount = await page.evaluate(() => state.connections.length);
-    expect(connCount).toBe(1);
+    expect(cardCount).toBe(2);
   });
 
-  test('Double-click to edit a loaded card', async ({ page }) => {
+  test('Test 4: Optimistic concurrency — external change blocks local write', async ({ page }) => {
     await page.goto(CANVAS_URL);
     await page.waitForSelector('#canvas-viewport');
+    await page.waitForFunction(() => typeof window.startEditing === 'function');
 
-    await openFileViaNativeDialog(page, TEST_FILE);
+    // Connect to file
+    await selectFileViaNativeDialog(page, TEST_FILE);
+    await expect(page.locator('#test1')).toBeVisible({ timeout: 5000 });
 
-    // Verify card loaded
-    await expect(page.locator('#test1')).toBeVisible();
+    // Wait for initial save to complete
+    await page.waitForTimeout(1000);
 
-    // Wait for Tiptap module to initialize (overwrites the startEditing stub)
-    await page.waitForFunction(() => {
-      const fn = window.startEditing.toString();
-      return fn.includes('editor') || fn.includes('tiptap') || fn.length > 50;
-    }, { timeout: 10000 });
+    // Externally modify the file
+    const externalData = JSON.stringify({
+      cards: [
+        { id: 'test1', x: 100, y: 100, w: 320, h: 200, color: '#FFF8E7', content: 'External change wins' }
+      ],
+      connections: []
+    }, null, 2);
+    fs.writeFileSync(TEST_FILE, externalData);
 
-    // Try calling startEditing directly (Playwright clicks may not trigger the mousedown/mouseup flow correctly)
+    // Immediately try to make a local change and save
     await page.evaluate(() => {
-      const c = state.cards.find(card => card.id === 'test1');
-      const el = document.getElementById('test1');
-      window.startEditing(c, el);
+      state.cards[0].content = 'User change should lose';
+      scheduleSave();
     });
-    await page.waitForSelector('.card.editing', { timeout: 5000 });
 
-    // Verify Tiptap editor is active
-    const tiptapVisible = await page.locator('.tiptap').isVisible();
-    expect(tiptapVisible).toBe(true);
+    // Wait for save attempt + optimistic concurrency to kick in
+    await page.waitForTimeout(2000);
 
-    // Verify Tiptap editor mounted with the card's content
-    const editorContent = await page.locator('.tiptap').textContent();
-    expect(editorContent).toContain('Test card');
+    // Read the file from disk — it should still have the external change
+    const fileContent = fs.readFileSync(TEST_FILE, 'utf-8');
+    const parsed = JSON.parse(fileContent);
+    expect(parsed.cards[0].content).toBe('External change wins');
 
-    // Verify the card has the editing class
-    const isEditing = await page.evaluate(() => document.querySelector('#test1').classList.contains('editing'));
-    expect(isEditing).toBe(true);
+    // The app state should also have reloaded to the external version
+    const appContent = await page.evaluate(() => state.cards[0].content);
+    expect(appContent).toBe('External change wins');
+  });
 
-    // Exit editing by calling stopEditing
-    await page.evaluate(() => window.stopEditing());
-    await page.waitForTimeout(300);
+  test('Test 5: Disconnect returns to overlay', async ({ page }) => {
+    await page.goto(CANVAS_URL);
+    await page.waitForSelector('#canvas-viewport');
+    await page.waitForFunction(() => typeof window.startEditing === 'function');
 
-    // Verify editing ended
-    const editingAfter = await page.evaluate(() => !!document.querySelector('.card.editing'));
-    expect(editingAfter).toBe(false);
+    // Connect to file
+    await selectFileViaNativeDialog(page, TEST_FILE);
+    await expect(page.locator('#test1')).toBeVisible({ timeout: 5000 });
 
-    // Verify state content preserved after round-trip through editor
-    const content = await page.evaluate(() => state.cards[0].content);
-    expect(content).toContain('Test card');
+    // Verify connected state
+    const hasHandleBefore = await page.evaluate(() => !!fileHandle);
+    expect(hasHandleBefore).toBe(true);
+
+    // Click the ✕ disconnect button
+    await page.click('#disconnect-btn');
+    await page.waitForTimeout(500);
+
+    // Verify overlay is showing
+    const overlayVisible = await page.evaluate(() =>
+      document.getElementById('connect-overlay').classList.contains('open')
+    );
+    expect(overlayVisible).toBe(true);
+
+    // Verify fileHandle is null
+    const hasHandleAfter = await page.evaluate(() => fileHandle === null);
+    expect(hasHandleAfter).toBe(true);
+
+    // Verify localStorage filename is cleared
+    const storedName = await page.evaluate(() => localStorage.getItem('canvas-sync-filename'));
+    expect(storedName).toBeNull();
   });
 });

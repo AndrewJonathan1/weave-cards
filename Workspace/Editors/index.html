@@ -344,8 +344,11 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
 <div id="connect-overlay">
   <div id="connect-panel">
     <h2>Weave Cards</h2>
-    <p>Choose a JSON file for your canvas. Pick an existing file to load it, or create a new one.</p>
-    <button onclick="selectFile()">Select File</button>
+    <p>Choose a canvas file</p>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;">
+      <button onclick="openExistingFile()">Open Existing</button>
+      <button onclick="createNewFile()" style="background:none;border:1px solid #ccc;color:#555;">Create New</button>
+    </div>
   </div>
 </div>
 <div id="rubber-band"></div>
@@ -1480,9 +1483,10 @@ async function storeFileHandle(handle) {
     const db = await openHandleDB();
     await new Promise((resolve, reject) => {
       const tx = db.transaction(HANDLE_STORE, 'readwrite');
-      const req = tx.objectStore(HANDLE_STORE).put(handle, 'syncFile');
-      req.onsuccess = () => { console.log('[sync] handle stored in IndexedDB'); resolve(); };
-      req.onerror = () => { console.error('[sync] IndexedDB put failed:', req.error); reject(req.error); };
+      tx.objectStore(HANDLE_STORE).put(handle, 'syncFile');
+      tx.oncomplete = () => { console.log('[sync] handle stored in IndexedDB'); resolve(); };
+      tx.onerror = () => { console.error('[sync] IndexedDB store failed:', tx.error); reject(tx.error); };
+      tx.onabort = () => { console.error('[sync] IndexedDB store aborted:', tx.error); reject(tx.error); };
     });
     localStorage.setItem('canvas-sync-filename', handle.name);
     console.log('[sync] filename stored in localStorage:', handle.name);
@@ -1585,7 +1589,48 @@ function loadFromLocalStorage() {
   return false;
 }
 
-async function selectFile() {
+async function connectToHandle(handle) {
+  const file = await handle.getFile();
+  lastFileModified = file.lastModified;
+  lastFileSize = file.size;
+  const text = await file.text();
+  if (text.trim()) {
+    try {
+      const loaded = JSON.parse(text);
+      if (loaded.cards) {
+        pushUndo();
+        state = loaded;
+        if (!state.connections) state.connections = [];
+        if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
+      }
+    } catch (e) { /* new or empty file — keep current state */ }
+  }
+  fileHandle = handle;
+  await storeFileHandle(fileHandle);
+  document.getElementById('connect-overlay').classList.remove('open');
+  renderAll();
+  updateTransform();
+  updateSyncStatus();
+  await writeToFile();
+  console.log('[file] connected to', handle.name);
+}
+
+async function openExistingFile() {
+  if (typeof window.showOpenFilePicker !== 'function') {
+    alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
+    return;
+  }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    await connectToHandle(handle);
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error('[file] Open failed:', e.name, e.message);
+  }
+}
+
+async function createNewFile() {
   if (typeof window.showSaveFilePicker !== 'function') {
     alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
     return;
@@ -1595,35 +1640,14 @@ async function selectFile() {
       suggestedName: 'canvas.json',
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
-    // Read existing content if the file has data
-    const file = await handle.getFile();
-    lastFileModified = file.lastModified;
-    lastFileSize = file.size;
-    const text = await file.text();
-    if (text.trim()) {
-      try {
-        const loaded = JSON.parse(text);
-        if (loaded.cards) {
-          pushUndo();
-          state = loaded;
-          if (!state.connections) state.connections = [];
-          if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
-        }
-      } catch (e) { /* new or empty file — keep current state */ }
-    }
-    fileHandle = handle;
-    await storeFileHandle(fileHandle);
-    // Dismiss connect overlay if showing
-    document.getElementById('connect-overlay').classList.remove('open');
-    renderAll();
-    updateTransform();
-    updateSyncStatus();
-    await writeToFile();
-    console.log('[file] connected to', handle.name);
+    await connectToHandle(handle);
   } catch (e) {
-    if (e.name !== 'AbortError') { console.error('[file] Select failed:', e.name, e.message); }
+    if (e.name !== 'AbortError') console.error('[file] Create failed:', e.name, e.message);
   }
 }
+
+// Keep selectFile as alias for backwards compat with tests
+async function selectFile() { await createNewFile(); }
 
 // selectFile() replaces the old separate Open/Save As buttons
 
