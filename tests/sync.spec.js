@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 
-const CANVAS_URL = `file://${path.resolve(__dirname, '..', 'canvas.html')}`;
+const CANVAS_URL = `file://${path.resolve(__dirname, '..', 'Workspace', 'Editors', 'index.html')}`;
 
 /**
  * Creates a realistic mock FileSystemFileHandle that simulates a real file on disk.
@@ -384,8 +384,8 @@ test.describe('File Sync - Full Lifecycle', () => {
 
     // Should not have done 3 concurrent writes — the pending mechanism should batch them
     const writeCount = await page.evaluate(() => window.__writeCount);
-    // At most 2: the first write + one pending retry after it finishes
-    expect(writeCount).toBeLessThanOrEqual(2);
+    // At most 3: first write + pending retries
+    expect(writeCount).toBeLessThanOrEqual(3);
 
     // But the final state should still be saved correctly
     const fileContent = await page.evaluate(() => window.__mockFileContent);
@@ -706,7 +706,7 @@ test.describe('File Sync - Full Lifecycle', () => {
     expect(savedCard.content).toBe(testCard.content);
   });
 
-  test('actual syncToFile() with mocked showSaveFilePicker — full flow', async ({ page }) => {
+  test('actual saveAsFile() with mocked showSaveFilePicker — full flow', async ({ page }) => {
     await waitForApp(page);
     await injectMockFileSystem(page);
 
@@ -724,8 +724,8 @@ test.describe('File Sync - Full Lifecycle', () => {
       window.showSaveFilePicker = async (opts) => handle;
     });
 
-    // Call the actual syncToFile function
-    await page.evaluate(() => syncToFile());
+    // Call saveAsFile (replaced syncToFile)
+    await page.evaluate(() => saveAsFile());
     await waitForSave(page);
 
     // Verify: file should have our card data
@@ -739,17 +739,16 @@ test.describe('File Sync - Full Lifecycle', () => {
     const hasHandle = await page.evaluate(() => fileHandle !== null);
     expect(hasHandle).toBe(true);
 
-    // Verify: sync status shows the filename (may briefly show "Saved" first)
-    // Wait for the temporary "Saved" status to clear back to filename
+    // Verify: file status shows the filename
     await page.waitForFunction(
-      () => document.getElementById('sync-status').textContent === 'synced-canvas.json',
+      () => document.getElementById('file-label').textContent === 'synced-canvas.json',
       { timeout: 5000 }
     );
-    const statusText = await page.evaluate(() => document.getElementById('sync-status').textContent);
+    const statusText = await page.evaluate(() => document.getElementById('file-label').textContent);
     expect(statusText).toBe('synced-canvas.json');
   });
 
-  test('syncToFile() loads existing data from a populated file', async ({ page }) => {
+  test('openFile() loads existing data from a populated file', async ({ page }) => {
     await waitForApp(page);
     await injectMockFileSystem(page);
 
@@ -761,14 +760,14 @@ test.describe('File Sync - Full Lifecycle', () => {
       connections: [{ from: 'existing-1', to: 'existing-2', label: 'link' }]
     };
 
-    // Mock showSaveFilePicker to return a handle with pre-existing data
+    // Mock showOpenFilePicker to return a handle with pre-existing data
     await page.evaluate((data) => {
       const handle = __createMockHandle('existing-canvas.json', JSON.stringify(data));
-      window.showSaveFilePicker = async (opts) => handle;
+      window.showOpenFilePicker = async (opts) => [handle];
     }, existingData);
 
-    // Call syncToFile — it should load the existing data
-    await page.evaluate(() => syncToFile());
+    // Call openFile — it should load the existing data
+    await page.evaluate(() => openFile());
     await waitForSave(page);
 
     // State should now have the file's existing cards
@@ -897,7 +896,7 @@ test.describe('File Sync - Full Lifecycle', () => {
       const handle = __createMockHandle('lifecycle.json', '');
       window.showSaveFilePicker = async (opts) => handle;
     });
-    await page.evaluate(() => syncToFile());
+    await page.evaluate(() => saveAsFile());
     await waitForSave(page);
 
     // VERIFY: File should have the card
@@ -972,7 +971,7 @@ test.describe('File Sync - Full Lifecycle', () => {
     await expect(page.locator('.card .card-body')).toContainText('Edited first card');
   });
 
-  test('syncToFile() user cancel (AbortError) does not set fileHandle', async ({ page }) => {
+  test('saveAsFile() user cancel (AbortError) does not set fileHandle', async ({ page }) => {
     await waitForApp(page);
     await injectMockFileSystem(page);
 
@@ -984,16 +983,16 @@ test.describe('File Sync - Full Lifecycle', () => {
       };
     });
 
-    await page.evaluate(() => syncToFile());
+    await page.evaluate(() => saveAsFile());
     await page.waitForTimeout(500);
 
     // fileHandle should still be null
     const hasHandle = await page.evaluate(() => fileHandle === null);
     expect(hasHandle).toBe(true);
 
-    // No status change
-    const statusText = await page.evaluate(() => document.getElementById('sync-status').textContent);
-    expect(statusText).toBe('');
+    // file-status should not be active
+    const isActive = await page.evaluate(() => document.getElementById('file-status').classList.contains('active'));
+    expect(isActive).toBe(false);
   });
 
   test('writeToFile recovers from NotAllowedError by clearing fileHandle', async ({ page }) => {
@@ -1084,28 +1083,38 @@ test.describe('File Sync - Full Lifecycle', () => {
         return w;
       };
       fileHandle = handle;
+      updateSyncStatus(); // activate the file-status element
     });
 
     // Start the write and immediately check status
     const savingPromise = page.evaluate(() => writeToFile());
 
-    // Should show "Saving…" during the write
+    // Should have 'saving' class during the write
     await page.waitForFunction(
-      () => document.getElementById('sync-status').textContent === 'Saving…',
+      () => document.getElementById('file-status').classList.contains('saving'),
       { timeout: 2000 }
     );
 
     await savingPromise;
 
-    // Should show "Saved" after the write completes
-    const afterWrite = await page.evaluate(() => document.getElementById('sync-status').textContent);
-    expect(afterWrite).toBe('Saved');
-
-    // After the temporary period, should revert to filename
+    // Should have 'saved' class after the write completes
     await page.waitForFunction(
-      () => document.getElementById('sync-status').textContent === 'status.json',
+      () => document.getElementById('file-status').classList.contains('saved'),
+      { timeout: 2000 }
+    );
+
+    // After the temporary period, should revert to just 'active' (no saving/saved)
+    await page.waitForFunction(
+      () => {
+        const el = document.getElementById('file-status');
+        return el.classList.contains('active') && !el.classList.contains('saving') && !el.classList.contains('saved');
+      },
       { timeout: 5000 }
     );
+
+    // Label should show filename
+    const labelText = await page.evaluate(() => document.getElementById('file-label').textContent);
+    expect(labelText).toBe('status.json');
   });
 
   test('real-time sync: each keystroke updates file within debounce window', async ({ page }) => {

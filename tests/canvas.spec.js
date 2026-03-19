@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 
-const CANVAS_URL = `file://${path.resolve(__dirname, '..', 'canvas.html')}`;
+const CANVAS_URL = `file://${path.resolve(__dirname, '..', 'Workspace', 'Editors', 'index.html')}`;
 
 // Helper: wait for the app to be ready
 async function waitForApp(page) {
