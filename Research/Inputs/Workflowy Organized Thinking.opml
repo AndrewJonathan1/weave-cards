@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<opml version="2.0">
+  <head>
+    <ownerEmail>
+      me@jonl.org
+    </ownerEmail>
+  </head>
+  <body>
+    <outline text="&lt;b&gt;Spheres &amp; Specific Businesses&lt;/b&gt;">
+      <outline text="&lt;b&gt;Event Organization&lt;/b&gt;">
+        <outline text="&lt;b&gt;Life Events&lt;/b&gt;">
+          <outline text="Events">
+            <outline text="&lt;b&gt;📍 Weddings&lt;/b&gt;">
+              <outline text="&lt;b&gt;What&lt;/b&gt;">
+                <outline text="PRESENTATION &amp; PROCESS" />
+              </outline>
+              <outline text="Individuals" />
+              <outline text="Wedding Planners" />
+            </outline>
+            <outline text="&lt;b&gt;📍 Funerals&lt;/b&gt;">
+              <outline text="Funeral Homes" />
+            </outline>
+            <outline text="Baby showers">
+              <outline text="Individuals" />
+            </outline>
+            <outline text="Coming of Age (Bar Mitzvahs, Quinceañeras)" />
+          </outline>
+          <outline text="Distribution">
+            <outline text="D2C" />
+            <outline text="Service People" />
+          </outline>
+        </outline>
+        <outline text="Conferences" />
+      </outline>
+      <outline text="&lt;b&gt;📍 Real Estate&lt;/b&gt;">
+        <outline text="Agents" />
+        <outline text="Property Listings" />
+      </outline>
+      <outline text="&lt;b&gt;📍  Local Businesses&lt;/b&gt;">
+        <outline text="Dentists" />
+        <outline text="Lawyers" />
+        <outline text="Photographers" />
+      </outline>
+      <outline text="&lt;b&gt;📍   Remote Contractors&lt;/b&gt;">
+        <outline text="Who">
+          <outline text="Coaches" />
+          <outline text="Presentation" />
+          <outline text="Consultants" />
+          <outline text="Agencies" />
+          <outline text="Marketing Teams" />
+        </outline>
+        <outline text="What">
+          <outline text="Pitch Pages" />
+          <outline text="Delivery Portal" />
+          <outline text="Delivery Portal" />
+          <outline text="Client Deliverables" />
+          <outline text="Micro Sites" />
+        </outline>
+      </outline>
+      <outline text="" />
+      <outline text="Small Businesses / Individual Customers">
+        <outline text="Dentist" />
+        <outline text="Therapist" />
+        <outline text="Lawyer" />
+        <outline text="Restaurants" />
+      </outline>
+      <outline text="Education">
+        <outline text="Thought Leaders" />
+        <outline text="" />
+      </outline>
+    </outline>
+  </body>
+</opml>

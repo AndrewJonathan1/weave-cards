@@ -164,17 +164,20 @@ html.dark .card-delete { color: rgba(255,255,255,0.35); }
 
 /* Toolbar */
 #toolbar {
-  position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100;
-  background: var(--toolbar-bg); border-radius: 10px; padding: 6px 10px; box-shadow: 0 2px 12px var(--toolbar-shadow);
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 100;
+  background: var(--toolbar-bg); border-radius: 10px; padding: 6px 12px;
+  box-shadow: 0 2px 12px var(--toolbar-shadow); border: 1px solid var(--toolbar-border);
   display: flex; gap: 6px; align-items: center;
+  width: max-content; max-width: min(700px, calc(100vw - 24px));
 }
 #toolbar button {
   background: none; border: 1px solid var(--toolbar-border); border-radius: 6px; padding: 6px 14px;
   font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text); transition: background 0.1s;
+  white-space: nowrap;
 }
 #toolbar button:hover { background: var(--toolbar-hover); }
-#toolbar .sep { width: 1px; height: 20px; background: var(--toolbar-border); }
-#toolbar-colors { display: flex; gap: 3px; align-items: center; }
+#toolbar .sep { width: 1px; height: 20px; background: var(--toolbar-border); flex-shrink: 0; }
+#toolbar-colors { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
 #toolbar-colors .tb-swatch {
   width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.12); cursor: pointer;
   transition: border-color 0.15s, transform 0.1s;
@@ -188,11 +191,70 @@ html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
   cursor: pointer; line-height: 1; color: var(--text);
 }
 #theme-toggle:hover { background: var(--toolbar-hover) !important; }
-#toolbar .sync-status { font-size: 11px; color: var(--text-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#toolbar .sync-status.active { color: var(--sync-active); }
+
+/* Sync button states */
+#sync-btn {
+  position: relative; white-space: nowrap;
+  transition: background 0.25s, border-color 0.25s, color 0.15s;
+}
+#sync-btn.synced { border-color: var(--sync-active); }
+#sync-btn .sync-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--sync-active); margin-right: 5px; vertical-align: middle;
+  opacity: 0; transition: opacity 0.2s;
+}
+#sync-btn.synced .sync-dot { opacity: 1; }
+#sync-btn.saving {
+  background: #f5c542 !important; border-color: #d4a832 !important; color: #5a4a10 !important;
+}
+html.dark #sync-btn.saving {
+  background: #5a4a1a !important; border-color: #7a6a2a !important; color: #f5d56a !important;
+}
+#sync-btn.saved {
+  background: #4a9 !important; border-color: #3a8a6a !important; color: #fff !important;
+}
+html.dark #sync-btn.saved {
+  background: #2a6a4a !important; border-color: #3a8a5a !important; color: #c0f0d0 !important;
+}
+
+/* Merge button — smaller, less prominent */
+#merge-btn {
+  padding: 4px 10px; font-size: 12px; color: var(--text-muted); border-color: transparent;
+}
+#merge-btn:hover { border-color: var(--toolbar-border); color: var(--text); }
 
 #zoom-display {
   font-size: 11px; color: var(--text-muted); min-width: 36px; text-align: center; user-select: none;
+}
+
+/* Color popover for small screens */
+#color-popover-btn {
+  display: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.12);
+  cursor: pointer; padding: 0; flex-shrink: 0; position: relative;
+}
+html.dark #color-popover-btn { border-color: rgba(255,255,255,0.15); }
+#color-popover {
+  display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--toolbar-bg); border-radius: 8px; padding: 8px;
+  box-shadow: 0 4px 16px var(--toolbar-shadow); border: 1px solid var(--toolbar-border);
+  z-index: 200; flex-wrap: wrap; gap: 4px; width: 120px;
+}
+#color-popover.open { display: flex; }
+#color-popover .tb-swatch {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.12); cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+html.dark #color-popover .tb-swatch { border-color: rgba(255,255,255,0.15); }
+#color-popover .tb-swatch:hover { border-color: var(--text-muted); transform: scale(1.15); }
+#color-popover .tb-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--toolbar-bg), 0 0 0 3px var(--text); }
+
+/* Responsive: narrow screens */
+@media (max-width: 640px) {
+  #toolbar { padding: 5px 8px; }
+  #toolbar button { padding: 5px 10px; font-size: 12px; }
+  #toolbar-colors { display: none !important; }
+  #color-popover-btn { display: block; }
+  #zoom-display { display: none; }
 }
 
 #hint {
@@ -206,14 +268,15 @@ html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
 </head>
 <body>
 <div id="toolbar">
-  <button id="sync-btn" onclick="syncToFile()">Sync to File</button>
-  <button onclick="mergeFile()">Merge</button>
+  <button id="sync-btn" onclick="syncToFile()"><span class="sync-dot"></span><span id="sync-label">Sync to File</span></button>
+  <button id="merge-btn" onclick="mergeFile()">Merge</button>
   <div class="sep"></div>
   <div id="toolbar-colors"></div>
+  <button id="color-popover-btn" onclick="toggleColorPopover(event)"></button>
+  <div id="color-popover"></div>
   <div class="sep"></div>
   <button id="theme-toggle" onclick="toggleTheme()"></button>
   <span id="zoom-display">100%</span>
-  <span class="sync-status" id="sync-status"></span>
 </div>
 <div id="canvas-viewport">
   <div id="canvas">
@@ -270,7 +333,8 @@ let activeColorIndex = 0;
 const viewport = document.getElementById('canvas-viewport');
 const canvas = document.getElementById('canvas');
 const svgLayer = document.getElementById('svg-layer');
-const syncStatusEl = document.getElementById('sync-status');
+const syncBtn = document.getElementById('sync-btn');
+const syncLabel = document.getElementById('sync-label');
 const zoomDisplay = document.getElementById('zoom-display');
 
 function getActiveColor() { return getColorHex(COLORS[activeColorIndex]); }
@@ -287,6 +351,7 @@ COLORS.forEach((col, i) => {
     toolbarColors.querySelector('.active')?.classList.remove('active');
     sw.classList.add('active');
     activeColorIndex = i;
+    syncPopoverToIndex(i);
   };
   toolbarColors.appendChild(sw);
   tbSwatches.push(sw);
@@ -294,9 +359,48 @@ COLORS.forEach((col, i) => {
 
 themeInitialized = true;
 
+function syncPopoverToIndex(i) {
+  if (!colorPopover) return;
+  colorPopover.querySelector('.active')?.classList.remove('active');
+  popoverSwatches[i]?.classList.add('active');
+  if (colorPopoverBtn) colorPopoverBtn.style.background = getColorHex(COLORS[i]);
+}
+
+// --- Color popover for small screens ---
+const colorPopoverBtn = document.getElementById('color-popover-btn');
+const colorPopover = document.getElementById('color-popover');
+colorPopoverBtn.style.background = getActiveColor();
+const popoverSwatches = [];
+COLORS.forEach((col, i) => {
+  const sw = document.createElement('div');
+  sw.className = 'tb-swatch' + (i === 0 ? ' active' : '');
+  sw.style.background = getColorHex(col);
+  sw.title = col.name;
+  sw.onclick = (e) => {
+    e.stopPropagation();
+    colorPopover.querySelector('.active')?.classList.remove('active');
+    sw.classList.add('active');
+    // Also sync the main toolbar swatches
+    toolbarColors.querySelector('.active')?.classList.remove('active');
+    tbSwatches[i]?.classList.add('active');
+    activeColorIndex = i;
+    colorPopoverBtn.style.background = getColorHex(col);
+    colorPopover.classList.remove('open');
+  };
+  colorPopover.appendChild(sw);
+  popoverSwatches.push(sw);
+});
+function toggleColorPopover(e) {
+  e.stopPropagation();
+  colorPopover.classList.toggle('open');
+}
+document.addEventListener('click', () => colorPopover.classList.remove('open'));
+
 // Update all swatch visuals + card backgrounds when theme changes
 function updateColorsForTheme() {
   tbSwatches.forEach((sw, i) => { sw.style.background = getColorHex(COLORS[i]); });
+  popoverSwatches.forEach((sw, i) => { sw.style.background = getColorHex(COLORS[i]); });
+  colorPopoverBtn.style.background = getActiveColor();
   // Update existing cards to use the correct color variant
   state.cards.forEach(c => {
     // Find which color this card uses and switch to the right variant
@@ -785,25 +889,103 @@ viewport.addEventListener('dblclick', (e) => {
 var isWriting = false;
 var pendingWrite = false;
 var LOCAL_STORAGE_KEY = 'canvas-state';
+var HANDLE_DB_NAME = 'canvas-file-handles';
+var HANDLE_STORE = 'handles';
+
+// IndexedDB helpers for persisting file handles across sessions
+function openHandleDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(HANDLE_DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(HANDLE_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function storeFileHandle(handle) {
+  try {
+    const db = await openHandleDB();
+    const tx = db.transaction(HANDLE_STORE, 'readwrite');
+    tx.objectStore(HANDLE_STORE).put(handle, 'syncFile');
+    localStorage.setItem('canvas-sync-filename', handle.name);
+    console.log('[sync] handle stored in IndexedDB');
+  } catch (e) { console.warn('[sync] failed to store handle:', e); }
+}
+async function loadFileHandle() {
+  try {
+    const db = await openHandleDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(HANDLE_STORE, 'readonly');
+      const req = tx.objectStore(HANDLE_STORE).get('syncFile');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) { console.warn('[sync] failed to load handle:', e); return null; }
+}
+async function clearFileHandle() {
+  try {
+    const db = await openHandleDB();
+    const tx = db.transaction(HANDLE_STORE, 'readwrite');
+    tx.objectStore(HANDLE_STORE).delete('syncFile');
+    localStorage.removeItem('canvas-sync-filename');
+  } catch (e) { /* ignore */ }
+}
 
 var syncStatusTimer = null;
+var savingStartedAt = 0;
+var pendingSaved = false;
 function updateSyncStatus(msg, temporary) {
   clearTimeout(syncStatusTimer);
+
+  if (msg === 'Saving…') {
+    pendingSaved = false;
+    syncBtn.classList.remove('saved');
+    syncBtn.classList.add('saving');
+    if (fileHandle) syncLabel.textContent = fileHandle.name;
+    savingStartedAt = Date.now();
+    return;
+  }
+
+  if (msg === 'Saved') {
+    // Ensure yellow shows for at least 300ms before going green
+    var elapsed = Date.now() - savingStartedAt;
+    if (elapsed < 300) {
+      pendingSaved = true;
+      syncStatusTimer = setTimeout(() => {
+        pendingSaved = false;
+        showSaved();
+      }, 300 - elapsed);
+      return;
+    }
+    showSaved();
+    return;
+  }
+
   if (msg) {
-    syncStatusEl.textContent = msg;
-    syncStatusEl.classList.add('active');
+    // Error or other message
+    syncBtn.classList.remove('saving', 'saved');
+    syncLabel.textContent = msg;
+    syncBtn.classList.remove('synced');
     if (temporary) {
-      syncStatusTimer = setTimeout(() => updateSyncStatus(), 1500);
+      syncStatusTimer = setTimeout(() => updateSyncStatus(), 3000);
     }
     return;
   }
+
+  // Default: show current state
+  syncBtn.classList.remove('saving', 'saved');
   if (fileHandle) {
-    syncStatusEl.textContent = fileHandle.name;
-    syncStatusEl.classList.add('active');
+    syncLabel.textContent = fileHandle.name;
+    syncBtn.classList.add('synced');
   } else {
-    syncStatusEl.textContent = '';
-    syncStatusEl.classList.remove('active');
+    syncLabel.textContent = 'Sync to File';
+    syncBtn.classList.remove('synced');
   }
+}
+function showSaved() {
+  syncBtn.classList.remove('saving');
+  syncBtn.classList.add('saved');
+  syncLabel.textContent = fileHandle ? fileHandle.name : 'Saved';
+  syncStatusTimer = setTimeout(() => updateSyncStatus(), 1200);
 }
 
 function saveToLocalStorage() {
@@ -841,6 +1023,7 @@ async function syncToFile() {
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
     console.log('[sync] file handle obtained:', fileHandle.name);
+    await storeFileHandle(fileHandle);
     const file = await fileHandle.getFile();
     const text = await file.text();
     if (text.trim()) {
@@ -904,6 +1087,7 @@ async function writeToFile() {
     console.error('Save failed:', e);
     if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
       fileHandle = null;
+      clearFileHandle();
       updateSyncStatus('Save failed — re-sync needed');
     }
   } finally {
@@ -968,6 +1152,51 @@ if (loadFromLocalStorage()) {
   renderAll();
 }
 updateTransform();
+
+// Reconnect to previously synced file
+(async function reconnectFile() {
+  var savedName = localStorage.getItem('canvas-sync-filename');
+  if (savedName) {
+    // Show filename immediately while we check permission
+    syncLabel.textContent = savedName;
+    syncBtn.classList.add('synced');
+  }
+  try {
+    var handle = await loadFileHandle();
+    if (!handle) {
+      if (savedName) { syncLabel.textContent = 'Sync to File'; syncBtn.classList.remove('synced'); localStorage.removeItem('canvas-sync-filename'); }
+      return;
+    }
+    var perm = await handle.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      fileHandle = handle;
+      console.log('[sync] reconnected to', handle.name);
+      // Load latest content from file
+      var file = await handle.getFile();
+      var text = await file.text();
+      if (text.trim()) {
+        try {
+          var loaded = JSON.parse(text);
+          if (loaded.cards && loaded.cards.length > 0) {
+            state = loaded;
+            if (!state.connections) state.connections = [];
+            renderAll();
+          }
+        } catch (e) { /* invalid JSON in file */ }
+      }
+      updateSyncStatus();
+    } else {
+      console.log('[sync] permission denied for stored handle');
+      syncLabel.textContent = 'Sync to File';
+      syncBtn.classList.remove('synced');
+      clearFileHandle();
+    }
+  } catch (e) {
+    console.warn('[sync] reconnect failed:', e);
+    syncLabel.textContent = 'Sync to File';
+    syncBtn.classList.remove('synced');
+  }
+})();
 </script>
 
 <script>

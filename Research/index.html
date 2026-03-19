@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organized Thinking</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #fafaf8;
+            color: #2d2d2d;
+            line-height: 1.7;
+        }
+
+        #toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e5e5e0;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        #toolbar .title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 0.02em;
+        }
+
+        #toolbar .hint {
+            font-size: 12px;
+            color: #bbb;
+            margin-left: auto;
+        }
+
+        #content {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 48px 24px 120px;
+        }
+
+        /* ---- Rendered Markdown ---- */
+
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 0 0 28px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d2d2d;
+            letter-spacing: -0.01em;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 40px 0 14px;
+            padding: 6px 0 6px 14px;
+            border-left: 3px solid #2d2d2d;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin: 28px 0 10px;
+            color: #444;
+        }
+
+        h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin: 22px 0 8px;
+            color: #555;
+        }
+
+        h5 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 16px 0 6px;
+            color: #666;
+        }
+
+        p { margin: 8px 0; }
+
+        ul, ol {
+            margin: 6px 0;
+            padding-left: 22px;
+        }
+
+        li { margin: 3px 0; }
+        li > ul, li > ol { margin: 2px 0; }
+
+        strong { font-weight: 600; }
+        em { font-style: italic; color: #555; }
+
+        hr {
+            border: none;
+            border-top: 1px solid #e0e0dc;
+            margin: 36px 0;
+        }
+
+        blockquote {
+            border-left: 3px solid #d0d0cc;
+            padding: 4px 0 4px 16px;
+            color: #666;
+            margin: 12px 0;
+        }
+
+        code {
+            background: #efefe8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.88em;
+        }
+
+        pre {
+            background: #f0f0ea;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+
+        pre code { background: none; padding: 0; }
+
+        @media print {
+            #toolbar { display: none; }
+            #content { padding: 0; max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <span class="title">Organized Thinking</span>
+        <span class="hint">Edit thinking.md &mdash; saves reload instantly</span>
+    </div>
+    <div id="content"></div>
+
+    <script type="module">
+        import { marked } from 'marked';
+        import md from './thinking.md?raw';
+
+        marked.setOptions({ breaks: false, gfm: true });
+        document.getElementById('content').innerHTML = marked.parse(md);
+    </script>
+</body>
+</html>
