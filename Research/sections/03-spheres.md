@@ -1,0 +1,48 @@
+---
+title: Spheres & Specific Businesses
+style: outline
+color: #2d2d2d
+---
+
+- **Event Organization**
+  - **Life Events**
+    - Events
+      - 📍 **Weddings**
+        - **What**
+          - PRESENTATION & PROCESS
+        - Individuals
+        - Wedding Planners
+      - 📍 **Funerals**
+        - Funeral Homes
+      - Baby showers
+      - Coming of Age (Bar Mitzvahs, Quinceañeras)
+    - Distribution
+      - D2C
+      - Service People
+  - Conferences
+- 📍 **Real Estate**
+  - Agents
+  - Property Listings
+- 📍 **Local Businesses**
+  - Dentists
+  - Lawyers
+  - Photographers
+- 📍 **Remote Contractors**
+  - **Who**
+    - Coaches
+    - Presentation
+    - Consultants
+    - Agencies
+    - Marketing Teams
+  - **What**
+    - Pitch Pages
+    - Delivery Portal
+    - Client Deliverables
+    - Micro Sites
+- Small Businesses / Individual Customers
+  - Dentist
+  - Therapist
+  - Lawyer
+  - Restaurants
+- Education
+  - Thought Leaders

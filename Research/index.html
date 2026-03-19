@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organized Thinking</title>
+    <title>@LAMP</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #fafaf8;
+            background: #f5f5f0;
             color: #2d2d2d;
-            line-height: 1.7;
+            line-height: 1.55;
+            opacity: 0;
+            transition: opacity 0.12s ease;
         }
 
+        body.loaded { opacity: 1; }
+
+        /* ---- Toolbar ---- */
         #toolbar {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid #e5e5e0;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e0e0db;
             padding: 10px 24px;
             display: flex;
             align-items: center;
@@ -28,127 +33,308 @@
         }
 
         #toolbar .title {
-            font-weight: 600;
-            font-size: 14px;
-            color: #888;
-            letter-spacing: 0.02em;
+            font-weight: 700;
+            font-size: 15px;
+            color: #2d2d2d;
+            letter-spacing: 0.01em;
         }
 
         #toolbar .hint {
-            font-size: 12px;
+            font-size: 11px;
             color: #bbb;
             margin-left: auto;
+            font-style: italic;
         }
 
-        #content {
-            max-width: 780px;
-            margin: 0 auto;
-            padding: 48px 24px 120px;
+        /* ---- Board ---- */
+        #board {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            height: calc(100vh - 45px);
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
         }
 
-        /* ---- Rendered Markdown ---- */
+        /* ---- Column ---- */
+        .column {
+            min-width: 290px;
+            max-width: 340px;
+            flex-shrink: 0;
+            height: 100%;
+            overflow-y: auto;
+            padding: 28px 20px 60px;
+            border-right: 1px solid #e8e8e3;
+            background: transparent;
+        }
 
-        h1 {
-            font-size: 26px;
+        .column:last-child { border-right: none; }
+
+        /* Subtle scrollbar */
+        .column::-webkit-scrollbar { width: 4px; }
+        .column::-webkit-scrollbar-track { background: transparent; }
+        .column::-webkit-scrollbar-thumb { background: #d5d5d0; border-radius: 2px; }
+        .column::-webkit-scrollbar-thumb:hover { background: #bbb; }
+
+        /* ---- Column Title ---- */
+        .column-title {
+            font-size: 18px;
             font-weight: 700;
-            margin: 0 0 28px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #2d2d2d;
+            margin: 0 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent, #2d2d2d);
             letter-spacing: -0.01em;
+            color: #1a1a1a;
         }
 
-        h2 {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 40px 0 14px;
-            padding: 6px 0 6px 14px;
-            border-left: 3px solid #2d2d2d;
+        /* ---- Cards ---- */
+        .card {
+            background: #fff;
+            border: 1px solid #e5e5e0;
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            transition: box-shadow 0.15s ease;
         }
 
-        h3 {
-            font-size: 17px;
-            font-weight: 600;
-            margin: 28px 0 10px;
+        .card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 10px;
+            color: #1a1a1a;
+            letter-spacing: 0.01em;
+        }
+
+        .card p {
+            font-size: 13px;
+            margin: 6px 0;
             color: #444;
         }
 
-        h4 {
-            font-size: 15px;
-            font-weight: 600;
-            margin: 22px 0 8px;
-            color: #555;
+        .card ul, .card ol {
+            font-size: 13px;
+            margin: 4px 0;
+            padding-left: 18px;
         }
 
-        h5 {
-            font-size: 14px;
-            font-weight: 600;
-            margin: 16px 0 6px;
-            color: #666;
+        .card li {
+            margin: 3px 0;
+            color: #444;
         }
 
-        p { margin: 8px 0; }
+        .card li > ul { margin: 2px 0; }
 
-        ul, ol {
+        .card strong {
+            font-weight: 600;
+            color: #2d2d2d;
+        }
+
+        /* ---- Outline (Workflowy-style) ---- */
+        .outline {
+            font-size: 13px;
+        }
+
+        .outline ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .outline > ul > li {
+            margin-bottom: 8px;
+        }
+
+        .outline li {
+            position: relative;
+            padding-left: 16px;
+            margin: 2px 0;
+            color: #444;
+        }
+
+        .outline li::before {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: 8px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .outline li > ul {
+            padding-left: 4px;
+            margin-left: 6px;
+            border-left: 1px solid #e8e8e3;
+        }
+
+        .outline strong {
+            font-weight: 600;
+            color: #2d2d2d;
+        }
+
+        /* Pinned items get a subtle highlight */
+        .outline li:has(> strong) {
+            color: #2d2d2d;
+        }
+
+        /* ---- Prose ---- */
+        .prose {
+            font-size: 13px;
+            color: #444;
+        }
+
+        .prose p { margin: 8px 0; }
+        .prose strong { color: #2d2d2d; }
+
+        .prose ul, .prose ol {
             margin: 6px 0;
-            padding-left: 22px;
+            padding-left: 18px;
         }
 
-        li { margin: 3px 0; }
-        li > ul, li > ol { margin: 2px 0; }
+        .prose li { margin: 3px 0; }
 
-        strong { font-weight: 600; }
-        em { font-style: italic; color: #555; }
-
-        hr {
-            border: none;
-            border-top: 1px solid #e0e0dc;
-            margin: 36px 0;
+        .prose h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 16px 0 8px;
+            color: #1a1a1a;
         }
 
-        blockquote {
-            border-left: 3px solid #d0d0cc;
-            padding: 4px 0 4px 16px;
-            color: #666;
-            margin: 12px 0;
+        .prose blockquote {
+            border-left: 2px solid #ddd;
+            padding-left: 12px;
+            color: #777;
+            margin: 10px 0;
         }
 
-        code {
-            background: #efefe8;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 0.88em;
+        /* ---- Empty state ---- */
+        .column-empty {
+            font-size: 12px;
+            color: #ccc;
+            font-style: italic;
+            padding: 12px 0;
         }
 
-        pre {
-            background: #f0f0ea;
-            padding: 16px;
-            border-radius: 6px;
-            overflow-x: auto;
-            margin: 12px 0;
-        }
-
-        pre code { background: none; padding: 0; }
-
+        /* ---- Print ---- */
         @media print {
             #toolbar { display: none; }
-            #content { padding: 0; max-width: none; }
+            #board { height: auto; overflow: visible; flex-wrap: wrap; }
+            .column { height: auto; overflow: visible; page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
     <div id="toolbar">
-        <span class="title">Organized Thinking</span>
-        <span class="hint">Edit thinking.md &mdash; saves reload instantly</span>
+        <span class="title">@LAMP</span>
+        <span class="hint">Edit files in sections/ &mdash; saves reload instantly</span>
     </div>
-    <div id="content"></div>
+    <div id="board"></div>
 
     <script type="module">
         import { marked } from 'marked';
-        import md from './thinking.md?raw';
+
+        // Import all section markdown files, sorted by filename
+        const modules = import.meta.glob('./sections/*.md', {
+            query: '?raw',
+            import: 'default',
+            eager: true
+        });
 
         marked.setOptions({ breaks: false, gfm: true });
-        document.getElementById('content').innerHTML = marked.parse(md);
+
+        // Parse YAML-like frontmatter
+        function parseFrontmatter(raw) {
+            const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+            if (!match) return { meta: {}, content: raw };
+            const meta = {};
+            match[1].split('\n').forEach(line => {
+                const idx = line.indexOf(':');
+                if (idx > 0) {
+                    meta[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+                }
+            });
+            return { meta, content: match[2] };
+        }
+
+        // Render content split into cards by ### headings
+        function renderCards(md) {
+            const trimmed = md.trim();
+            if (!trimmed) return '<div class="column-empty">Empty — add content to this file</div>';
+
+            // Split by ### headings, keeping content before first heading as its own chunk
+            const chunks = trimmed.split(/(?=^### )/m).filter(s => s.trim());
+
+            return chunks.map(chunk => {
+                const html = marked.parse(chunk.trim());
+                return '<div class="card">' + html + '</div>';
+            }).join('');
+        }
+
+        // Render as hierarchical outline (Workflowy-style)
+        function renderOutline(md) {
+            const trimmed = md.trim();
+            if (!trimmed) return '<div class="column-empty">Empty — add content to this file</div>';
+            return '<div class="outline">' + marked.parse(trimmed) + '</div>';
+        }
+
+        // Render as prose
+        function renderProse(md) {
+            const trimmed = md.trim();
+            if (!trimmed) return '<div class="column-empty">Empty — add content to this file</div>';
+            return '<div class="prose">' + marked.parse(trimmed) + '</div>';
+        }
+
+        // Build the board
+        const board = document.getElementById('board');
+        const sorted = Object.entries(modules).sort(([a], [b]) => a.localeCompare(b));
+
+        for (const [path, raw] of sorted) {
+            const { meta, content } = parseFrontmatter(raw);
+
+            const col = document.createElement('div');
+            col.className = 'column';
+            if (meta.color) col.style.setProperty('--accent', meta.color);
+
+            // Title
+            const title = document.createElement('h2');
+            title.className = 'column-title';
+            const fallbackTitle = path.split('/').pop()
+                .replace(/^\d+-/, '')
+                .replace('.md', '')
+                .replace(/-/g, ' ');
+            title.textContent = meta.title || fallbackTitle;
+            col.appendChild(title);
+
+            // Body
+            const body = document.createElement('div');
+            body.className = 'column-body';
+
+            const style = (meta.style || 'outline').trim();
+            switch (style) {
+                case 'cards':
+                    body.innerHTML = renderCards(content);
+                    break;
+                case 'prose':
+                    body.innerHTML = renderProse(content);
+                    break;
+                case 'outline':
+                default:
+                    body.innerHTML = renderOutline(content);
+                    break;
+            }
+
+            col.appendChild(body);
+            board.appendChild(col);
+        }
+
+        // Fade in — no flash
+        document.body.classList.add('loaded');
     </script>
 </body>
 </html>
