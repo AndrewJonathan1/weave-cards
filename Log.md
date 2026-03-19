@@ -26,7 +26,9 @@
 
 ## Working Files
 
-- **Jonathan's canvas:** `/Users/j/Dropbox/_Everything/Pinned/2026-03-19 Websites/Working Documents/canvas.json` — This is the live canvas file Jonathan edits. Claude merges INTO this file (not the other way around). Currently nothing in it Jonathan cares about — safe to overwrite with merged content.
-- **Claude's canvas data:** `/Users/j/Dropbox/_Everything/Pinned/2026-03-19 Websites/canvas-data.json` — Pre-populated cards from the analysis session. Merge this into Jonathan's canvas when ready.
-- **Canvas tool:** `/Users/j/Dropbox/_Everything/Pinned/2026-03-19 Websites/canvas.html` — Open in Chrome, click "Sync to File" and point to the canvas.json in Working Documents.
+- **Canvas app:** `Editors/canvas.html` — Open in Chrome via `http://localhost:8765/Editors/canvas.html`. Sync to File persists across sessions via IndexedDB.
+- **Canvas data:** `Editors/canvas-data.json` — Card data. Sync to this file from the canvas app.
+- **Analysis reports:** `Output/01-09*.md` — Niche/domain analysis from agent research
+- **Value landscape:** `Output/value-landscape.md` — The full service offering document
+- **Transcript viewer:** `Output/conversation-transcript.html` — Full conversation rendered as HTML
 
