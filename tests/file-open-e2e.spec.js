@@ -21,7 +21,7 @@ async function openFileViaNativeDialog(page, filePath) {
   await page.waitForTimeout(2000);
 }
 
-test.describe('File Open — end-to-end with native dialog', () => {
+test.describe.skip('File Open — end-to-end with native dialog (skipped: Open/Save As buttons removed in one-file-flow refactor)', () => {
 
   test.beforeEach(() => {
     fs.writeFileSync(TEST_FILE, TEST_DATA);

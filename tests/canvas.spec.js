@@ -8,6 +8,11 @@ async function waitForApp(page) {
   await page.goto(CANVAS_URL);
   await page.waitForSelector('#canvas-viewport');
   await page.waitForFunction(() => typeof window.startEditing === 'function');
+  // Dismiss the connect overlay so tests can interact with the canvas
+  await page.evaluate(() => {
+    const overlay = document.getElementById('connect-overlay');
+    if (overlay) overlay.classList.remove('open');
+  });
 }
 
 // Helper: create a card by double-clicking empty canvas area

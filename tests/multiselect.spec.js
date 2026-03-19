@@ -7,6 +7,11 @@ async function waitForApp(page) {
   await page.goto(CANVAS_URL);
   await page.waitForSelector('#canvas-viewport');
   await page.waitForFunction(() => typeof window.startEditing === 'function');
+  // Dismiss the connect overlay so tests can interact with the canvas
+  await page.evaluate(() => {
+    const overlay = document.getElementById('connect-overlay');
+    if (overlay) overlay.classList.remove('open');
+  });
 }
 
 // Create two cards at known positions via state injection (more reliable than double-click for positioning)

@@ -584,12 +584,21 @@
       "h": 120,
       "color": "#FFD6CC",
       "content": "## Why Every Cut\n\nComplexity kills speed, speed is the moat. Every cut removes: ongoing maintenance, unpredictable scope, or client needing to be actively involved. The ideal client **does not want to manage anything**."
+    },
+    {
+      "id": "cmmx9bjln4uhni",
+      "x": -184.21215738929405,
+      "y": 755.6354496705287,
+      "w": 320,
+      "h": 200,
+      "color": "#FFF8E7",
+      "content": "f"
     }
   ],
   "connections": [],
   "camera": {
-    "x": -82.03028765134235,
-    "y": 646.0447274706037,
+    "x": -487.96174386613995,
+    "y": 642.4310943292257,
     "zoom": 0.830189419520318
   }
 }

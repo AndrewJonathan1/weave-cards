@@ -41,6 +41,11 @@ async function waitForApp(page) {
   await page.goto(CANVAS_URL);
   await page.waitForSelector('#canvas-viewport');
   await page.waitForFunction(() => typeof window.startEditing === 'function');
+  // Dismiss the connect overlay so tests can interact with the canvas
+  await page.evaluate(() => {
+    const overlay = document.getElementById('connect-overlay');
+    if (overlay) overlay.classList.remove('open');
+  });
 }
 
 async function createCard(page, x = 640, y = 400) {
@@ -483,6 +488,11 @@ test.describe('File Sync - Full Lifecycle', () => {
     await page.goto(CANVAS_URL);
     await page.waitForSelector('#canvas-viewport');
     await page.waitForFunction(() => typeof window.startEditing === 'function');
+    // Dismiss connect overlay
+    await page.evaluate(() => {
+      const overlay = document.getElementById('connect-overlay');
+      if (overlay) overlay.classList.remove('open');
+    });
 
     // The card should be restored
     const cardCount = await page.evaluate(() => state.cards.length);
@@ -706,7 +716,7 @@ test.describe('File Sync - Full Lifecycle', () => {
     expect(savedCard.content).toBe(testCard.content);
   });
 
-  test('actual saveAsFile() with mocked showSaveFilePicker — full flow', async ({ page }) => {
+  test('selectFile() with mocked showSaveFilePicker — full flow', async ({ page }) => {
     await waitForApp(page);
     await injectMockFileSystem(page);
 
@@ -724,8 +734,8 @@ test.describe('File Sync - Full Lifecycle', () => {
       window.showSaveFilePicker = async (opts) => handle;
     });
 
-    // Call saveAsFile (replaced syncToFile)
-    await page.evaluate(() => saveAsFile());
+    // Call selectFile (unified file flow)
+    await page.evaluate(() => selectFile());
     await waitForSave(page);
 
     // Verify: file should have our card data
@@ -748,7 +758,7 @@ test.describe('File Sync - Full Lifecycle', () => {
     expect(statusText).toBe('synced-canvas.json');
   });
 
-  test('openFile() loads existing data from a populated file', async ({ page }) => {
+  test('selectFile() loads existing data from a populated file', async ({ page }) => {
     await waitForApp(page);
     await injectMockFileSystem(page);
 
@@ -760,14 +770,14 @@ test.describe('File Sync - Full Lifecycle', () => {
       connections: [{ from: 'existing-1', to: 'existing-2', label: 'link' }]
     };
 
-    // Mock showOpenFilePicker to return a handle with pre-existing data
+    // Mock showSaveFilePicker to return a handle with pre-existing data
     await page.evaluate((data) => {
       const handle = __createMockHandle('existing-canvas.json', JSON.stringify(data));
-      window.showOpenFilePicker = async (opts) => [handle];
+      window.showSaveFilePicker = async (opts) => handle;
     }, existingData);
 
-    // Call openFile — it should load the existing data
-    await page.evaluate(() => openFile());
+    // Call selectFile — it should load the existing data
+    await page.evaluate(() => selectFile());
     await waitForSave(page);
 
     // State should now have the file's existing cards
@@ -896,7 +906,7 @@ test.describe('File Sync - Full Lifecycle', () => {
       const handle = __createMockHandle('lifecycle.json', '');
       window.showSaveFilePicker = async (opts) => handle;
     });
-    await page.evaluate(() => saveAsFile());
+    await page.evaluate(() => selectFile());
     await waitForSave(page);
 
     // VERIFY: File should have the card
@@ -971,7 +981,7 @@ test.describe('File Sync - Full Lifecycle', () => {
     await expect(page.locator('.card .card-body')).toContainText('Edited first card');
   });
 
-  test('saveAsFile() user cancel (AbortError) does not set fileHandle', async ({ page }) => {
+  test('selectFile() user cancel (AbortError) does not set fileHandle', async ({ page }) => {
     await waitForApp(page);
     await injectMockFileSystem(page);
 
@@ -983,7 +993,7 @@ test.describe('File Sync - Full Lifecycle', () => {
       };
     });
 
-    await page.evaluate(() => saveAsFile());
+    await page.evaluate(() => selectFile());
     await page.waitForTimeout(500);
 
     // fileHandle should still be null

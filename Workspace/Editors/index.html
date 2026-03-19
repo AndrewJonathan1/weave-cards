@@ -197,12 +197,13 @@ html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
 }
 #theme-toggle:hover { background: var(--toolbar-hover) !important; }
 
-/* File status indicator */
+/* File status indicator — clickable to switch file */
 #file-status {
   display: none; font-size: 12px; white-space: nowrap; align-items: center; gap: 5px;
-  padding: 0 4px; color: var(--text-muted);
-  transition: color 0.2s;
+  padding: 2px 8px; color: var(--text-muted);
+  transition: color 0.2s; cursor: pointer; border-radius: 4px;
 }
+#file-status:hover { background: var(--toolbar-hover); }
 #file-status.active { display: inline-flex; }
 #file-status .status-dot {
   width: 7px; height: 7px; border-radius: 50%;
@@ -221,6 +222,31 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   padding: 4px 10px; font-size: 12px; color: var(--text-muted); border-color: transparent;
 }
 #import-btn:hover { border-color: var(--toolbar-border); color: var(--text); }
+
+/* Connect file overlay — blocking until file is chosen */
+#connect-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+#connect-overlay.open { display: flex; }
+#connect-panel {
+  background: var(--toolbar-bg); border-radius: 14px; padding: 36px 40px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center;
+  max-width: 360px; width: 100%;
+}
+#connect-panel h2 {
+  font-size: 20px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+#connect-panel p {
+  font-size: 13px; color: var(--text-muted); margin: 0 0 24px; line-height: 1.5;
+}
+#connect-panel button {
+  background: var(--link, #2563eb); color: white; border: none; border-radius: 8px;
+  padding: 10px 28px; font-size: 14px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: opacity 0.15s;
+}
+#connect-panel button:hover { opacity: 0.9; }
 
 #zoom-display {
   font-size: 11px; color: var(--text-muted); min-width: 36px; text-align: center; user-select: none;
@@ -325,17 +351,22 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
 </head>
 <body>
 <div id="toolbar">
-  <button class="tb-btn" onclick="openFile()">Open</button>
-  <button class="tb-btn" onclick="saveAsFile()">Save As</button>
-  <button id="import-btn" class="tb-btn" onclick="importCards()">Add Cards</button>
+  <span id="file-status" onclick="selectFile()"><span class="status-dot"></span><span id="file-label"></span></span>
+  <button id="import-btn" class="tb-btn" onclick="importCards()" style="display:none">Add Cards</button>
   <button id="reload-btn" class="tb-btn" onclick="reloadFile()" style="display:none">Reload</button>
   <button id="wait-btn" class="tb-btn" onclick="enterWaitMode()" style="display:none">Wait for AI</button>
-  <span id="file-status"><span class="status-dot"></span><span id="file-label"></span></span>
   <div class="sep"></div>
   <div id="toolbar-colors"></div>
   <div class="sep"></div>
   <button id="theme-toggle" onclick="toggleTheme()"></button>
   <span id="zoom-display">100%</span>
+</div>
+<div id="connect-overlay">
+  <div id="connect-panel">
+    <h2>Weave Cards</h2>
+    <p>Choose a JSON file for your canvas. Pick an existing file to load it, or create a new one.</p>
+    <button onclick="selectFile()">Select File</button>
+  </div>
 </div>
 <div id="wait-overlay" onclick="exitWaitMode()">
   <span class="wait-label">Waiting for AI changes...</span>
@@ -379,9 +410,8 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   <div class="help-row"><span class="help-key">Space+drag</span><span class="help-desc">pan</span></div>
   <div class="help-row"><span class="help-key">Ctrl+scroll / pinch</span><span class="help-desc">zoom</span></div>
   <h4>File</h4>
-  <div class="help-row"><span class="help-key">Open</span><span class="help-desc">load file + auto-sync</span></div>
-  <div class="help-row"><span class="help-key">Save As</span><span class="help-desc">save to file + auto-sync</span></div>
-  <div class="help-row"><span class="help-key">Add Cards</span><span class="help-desc">add cards from file</span></div>
+  <div class="help-row"><span class="help-key">click filename</span><span class="help-desc">switch or connect file</span></div>
+  <div class="help-row"><span class="help-key">Add Cards</span><span class="help-desc">merge cards from another file</span></div>
   <div class="help-row"><span class="help-key">Reload</span><span class="help-desc">re-read file from disk</span></div>
   <div class="help-row"><span class="help-key">Wait for AI</span><span class="help-desc">lock canvas, auto-reload on change</span></div>
 </div>
@@ -1481,10 +1511,14 @@ function openHandleDB() {
 async function storeFileHandle(handle) {
   try {
     const db = await openHandleDB();
-    const tx = db.transaction(HANDLE_STORE, 'readwrite');
-    tx.objectStore(HANDLE_STORE).put(handle, 'syncFile');
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(HANDLE_STORE, 'readwrite');
+      const req = tx.objectStore(HANDLE_STORE).put(handle, 'syncFile');
+      req.onsuccess = () => { console.log('[sync] handle stored in IndexedDB'); resolve(); };
+      req.onerror = () => { console.error('[sync] IndexedDB put failed:', req.error); reject(req.error); };
+    });
     localStorage.setItem('canvas-sync-filename', handle.name);
-    console.log('[sync] handle stored in IndexedDB');
+    console.log('[sync] filename stored in localStorage:', handle.name);
   } catch (e) { console.warn('[sync] failed to store handle:', e); }
 }
 async function loadFileHandle() {
@@ -1555,11 +1589,14 @@ function updateSyncStatus(msg, temporary) {
     syncLabel.textContent = '';
     fileStatus.classList.remove('active');
   }
-  // Toggle Reload / Wait for AI button visibility
+  // Toggle connected-state button visibility
+  var connected = !!fileHandle;
   var reloadBtn = document.getElementById('reload-btn');
-  if (reloadBtn) reloadBtn.style.display = fileHandle ? '' : 'none';
+  if (reloadBtn) reloadBtn.style.display = connected ? '' : 'none';
   var waitBtn = document.getElementById('wait-btn');
-  if (waitBtn) waitBtn.style.display = fileHandle ? '' : 'none';
+  if (waitBtn) waitBtn.style.display = connected ? '' : 'none';
+  var importBtn = document.getElementById('import-btn');
+  if (importBtn) importBtn.style.display = connected ? '' : 'none';
 }
 function showSaved() {
   fileStatus.classList.remove('saving');
@@ -1589,21 +1626,17 @@ function loadFromLocalStorage() {
   return false;
 }
 
-async function openFile() {
-  console.log('[file] openFile called');
-  console.log('[file] showOpenFilePicker available:', typeof window.showOpenFilePicker);
-  console.log('[file] isSecureContext:', window.isSecureContext);
-  console.log('[file] protocol:', location.protocol, 'host:', location.host);
-  if (typeof window.showOpenFilePicker !== 'function') {
+async function selectFile() {
+  if (typeof window.showSaveFilePicker !== 'function') {
     alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
     return;
   }
   try {
-    console.log('[file] calling showOpenFilePicker...');
-    const [handle] = await window.showOpenFilePicker({
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'canvas.json',
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
-    console.log('[file] file handle obtained:', handle.name);
+    // Read existing content if the file has data
     const file = await handle.getFile();
     lastFileModified = file.lastModified;
     lastFileSize = file.size;
@@ -1612,21 +1645,24 @@ async function openFile() {
       try {
         const loaded = JSON.parse(text);
         if (loaded.cards) {
+          pushUndo();
           state = loaded;
           if (!state.connections) state.connections = [];
           if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
-          renderAll();
-          updateTransform();
         }
-      } catch (e) { console.warn('[file] File contained invalid JSON'); alert('File does not contain valid JSON.'); return; }
+      } catch (e) { /* new or empty file — keep current state */ }
     }
     fileHandle = handle;
     await storeFileHandle(fileHandle);
+    // Dismiss connect overlay if showing
+    document.getElementById('connect-overlay').classList.remove('open');
+    renderAll();
+    updateTransform();
     updateSyncStatus();
-    console.log('[file] opened and connected to', handle.name);
+    await writeToFile();
+    console.log('[file] connected to', handle.name);
   } catch (e) {
-    console.error('[file] Open failed:', e.name, e.message, e);
-    if (e.name !== 'AbortError') { updateSyncStatus('Open failed', true); }
+    if (e.name !== 'AbortError') { console.error('[file] Select failed:', e.name, e.message); }
   }
 }
 
@@ -1655,33 +1691,7 @@ async function reloadFile() {
   }
 }
 
-async function saveAsFile() {
-  console.log('[file] saveAsFile called');
-  console.log('[file] showSaveFilePicker available:', typeof window.showSaveFilePicker);
-  console.log('[file] isSecureContext:', window.isSecureContext);
-  console.log('[file] protocol:', location.protocol, 'host:', location.host);
-  if (typeof window.showSaveFilePicker !== 'function') {
-    console.warn('[file] showSaveFilePicker not available, falling back to download');
-    downloadAsJson();
-    return;
-  }
-  try {
-    console.log('[file] calling showSaveFilePicker...');
-    const handle = await window.showSaveFilePicker({
-      suggestedName: 'canvas.json',
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-    });
-    console.log('[file] save handle obtained:', handle.name);
-    fileHandle = handle;
-    await storeFileHandle(fileHandle);
-    updateSyncStatus();
-    await writeToFile();
-    console.log('[file] initial write complete');
-  } catch (e) {
-    console.error('[file] Save As failed:', e.name, e.message, e);
-    if (e.name !== 'AbortError') { updateSyncStatus('Save failed', true); }
-  }
-}
+// selectFile() replaces the old separate Open/Save As buttons
 
 function disconnectFile() {
   fileHandle = null;
@@ -1860,12 +1870,16 @@ async function importCards() {
     fileStatus.classList.add('active');
   }
   try {
+    console.log('[init] checking IndexedDB for stored handle...');
     var handle = await loadFileHandle();
+    console.log('[init] loadFileHandle result:', handle ? handle.name : 'null');
     if (handle) {
+      console.log('[init] requesting permission for', handle.name);
       var perm = await handle.requestPermission({ mode: 'readwrite' });
+      console.log('[init] permission result:', perm);
       if (perm === 'granted') {
         fileHandle = handle;
-        console.log('[sync] reconnected to', handle.name);
+        console.log('[init] reconnected to', handle.name);
         var file = await handle.getFile();
         lastFileModified = file.lastModified;
         lastFileSize = file.size;
@@ -1912,8 +1926,13 @@ async function importCards() {
   updateTransform();
 
   // Update toolbar AFTER renderAll to ensure it's the final toolbar state
-  console.log('[init] calling updateSyncStatus, fileHandle:', !!fileHandle, fileHandle?.name);
+  console.log('[init] fileHandle:', !!fileHandle, fileHandle?.name, 'reconnected:', reconnected);
   updateSyncStatus();
+
+  // Show connect overlay if no file is connected
+  if (!fileHandle) {
+    document.getElementById('connect-overlay').classList.add('open');
+  }
 })();
 </script>
 
