@@ -330,33 +330,11 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
 }
 #readme-close:hover { background: var(--toolbar-border, #e5e5e0); color: var(--text, #1a1a1a); }
 
-/* Wait for AI overlay */
-#wait-overlay {
-  display: none; position: fixed; inset: 0; z-index: 9998;
-  background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
-  align-items: center; justify-content: center; flex-direction: column;
-  cursor: pointer; user-select: none;
-}
-#wait-overlay.open { display: flex; }
-#wait-overlay .wait-label {
-  font-size: 18px; font-weight: 600; color: white;
-  letter-spacing: 0.01em;
-  animation: waitPulse 2s ease-in-out infinite;
-}
-#wait-overlay .wait-hint {
-  font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 10px;
-}
-@keyframes waitPulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
 </style>
 </head>
 <body>
 <div id="toolbar">
   <span id="file-status"><span class="status-dot"></span><span id="file-label" onclick="selectFile()"></span><button id="disconnect-btn" onclick="event.stopPropagation();disconnectFile()">&times;</button></span>
-  <button id="reload-btn" class="tb-btn" onclick="reloadFile()" style="display:none">Reload</button>
-  <button id="wait-btn" class="tb-btn" onclick="enterWaitMode()" style="display:none">Wait for AI</button>
   <div class="sep"></div>
   <div id="toolbar-colors"></div>
   <div class="sep"></div>
@@ -369,10 +347,6 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
     <p>Choose a JSON file for your canvas. Pick an existing file to load it, or create a new one.</p>
     <button onclick="selectFile()">Select File</button>
   </div>
-</div>
-<div id="wait-overlay" onclick="exitWaitMode()">
-  <span class="wait-label">Waiting for AI changes...</span>
-  <span class="wait-hint">Click or press Escape to cancel</span>
 </div>
 <div id="rubber-band"></div>
 <div id="canvas-viewport">
@@ -414,8 +388,6 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   <h4>File</h4>
   <div class="help-row"><span class="help-key">click filename</span><span class="help-desc">switch file</span></div>
   <div class="help-row"><span class="help-key">✕ button</span><span class="help-desc">disconnect file</span></div>
-  <div class="help-row"><span class="help-key">Reload</span><span class="help-desc">re-read file from disk</span></div>
-  <div class="help-row"><span class="help-key">Wait for AI</span><span class="help-desc">lock canvas, auto-reload on change</span></div>
 </div>
 
 <!-- README overlay -->
@@ -1427,13 +1399,6 @@ document.addEventListener('keydown', (e) => {
   var isEditing = !!document.querySelector('.card.editing');
   var inInput = e.target.matches('textarea,input,[contenteditable]');
 
-  // Escape — dismiss Wait for AI overlay
-  if (e.key === 'Escape' && waitingForAI) {
-    e.preventDefault();
-    exitWaitMode();
-    return;
-  }
-
   // Cmd/Ctrl+Z — undo, Cmd/Ctrl+Shift+Z — redo (only when not editing a card)
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !isEditing) {
     e.preventDefault();
@@ -1591,12 +1556,6 @@ function updateSyncStatus(msg, temporary) {
     syncLabel.textContent = '';
     fileStatus.classList.remove('active');
   }
-  // Toggle connected-state button visibility
-  var connected = !!fileHandle;
-  var reloadBtn = document.getElementById('reload-btn');
-  if (reloadBtn) reloadBtn.style.display = connected ? '' : 'none';
-  var waitBtn = document.getElementById('wait-btn');
-  if (waitBtn) waitBtn.style.display = connected ? '' : 'none';
 }
 function showSaved() {
   fileStatus.classList.remove('saving');
@@ -1666,31 +1625,6 @@ async function selectFile() {
   }
 }
 
-async function reloadFile() {
-  if (!fileHandle) return;
-  try {
-    const file = await fileHandle.getFile();
-    lastFileModified = file.lastModified;
-    lastFileSize = file.size;
-    const text = await file.text();
-    if (!text.trim()) return;
-    const loaded = JSON.parse(text);
-    if (!loaded.cards) return;
-    pushUndo();
-    stopEditing();
-    clearSelection();
-    state = loaded;
-    if (!state.connections) state.connections = [];
-    if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
-    renderAll();
-    updateTransform();
-    updateSyncStatus('Reloaded', true);
-  } catch (e) {
-    console.error('[file] Reload failed:', e.name, e.message);
-    updateSyncStatus('Reload failed', true);
-  }
-}
-
 // selectFile() replaces the old separate Open/Save As buttons
 
 function disconnectFile() {
@@ -1715,11 +1649,10 @@ function downloadAsJson() {
 }
 
 async function writeToFile() {
-  console.log('[save] writeToFile called, fileHandle:', !!fileHandle, 'isWriting:', isWriting);
   // Always save to localStorage as backup
   saveToLocalStorage();
 
-  if (!fileHandle) { console.log('[save] no fileHandle, skipping file write'); return; }
+  if (!fileHandle) return;
 
   // Prevent concurrent writes
   if (isWriting) {
@@ -1730,18 +1663,52 @@ async function writeToFile() {
   updateSyncStatus('Saving…');
 
   try {
+    // Optimistic concurrency: check if file changed externally before writing
+    const file = await fileHandle.getFile();
+    if (file.lastModified !== lastFileModified || file.size !== lastFileSize) {
+      // External change detected — reload instead of overwriting
+      console.log('[save] external change detected before write, reloading instead');
+      const text = await file.text();
+      try {
+        const loaded = JSON.parse(text);
+        if (loaded.cards) {
+          pushUndo();
+          stopEditing();
+          clearSelection();
+          state.cards = loaded.cards;
+          state.connections = loaded.connections || [];
+          if (loaded.camera) { camX = loaded.camera.x || 0; camY = loaded.camera.y || 0; zoom = loaded.camera.zoom || 1; }
+          renderAll();
+          updateTransform();
+          lastFileModified = file.lastModified;
+          lastFileSize = file.size;
+          updateSyncStatus('Updated externally', true);
+        }
+      } catch (e) { /* bad JSON, skip */ }
+      isWriting = false;
+      if (pendingWrite) { pendingWrite = false; writeToFile(); }
+      return;
+    }
+
+    // Safe to write — file hasn't changed externally
     const writable = await fileHandle.createWritable();
-    await writable.write(JSON.stringify(state, null, 2));
+    const json = JSON.stringify(state, null, 2);
+    await writable.write(json);
     await writable.close();
+
+    // Update tracking after our own write
+    const newFile = await fileHandle.getFile();
+    lastFileModified = newFile.lastModified;
+    lastFileSize = newFile.size;
     justWrote = true;
-    console.log('[save] write complete');
+
     updateSyncStatus('Saved', true);
   } catch (e) {
     console.error('Save failed:', e);
     if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError') {
       fileHandle = null;
       clearFileHandle();
-      updateSyncStatus('File lost — reconnect via Open');
+      updateSyncStatus('File lost — reconnect');
     }
   } finally {
     isWriting = false;
@@ -1762,22 +1729,6 @@ function scheduleSave() {
   console.log('[save] new timer set:', saveTimer);
 }
 
-// --- Wait for AI mode ---
-var waitingForAI = false;
-
-function enterWaitMode() {
-  if (!fileHandle) return;
-  stopEditing();
-  clearSelection();
-  waitingForAI = true;
-  document.getElementById('wait-overlay').classList.add('open');
-}
-
-function exitWaitMode() {
-  waitingForAI = false;
-  document.getElementById('wait-overlay').classList.remove('open');
-}
-
 // --- Auto-poll file for external changes ---
 setInterval(async () => {
   if (!fileHandle) return;
@@ -1789,8 +1740,8 @@ setInterval(async () => {
       lastFileSize = file.size;
       // Skip reload if we just wrote this change ourselves
       if (justWrote) { justWrote = false; return; }
-      // Skip reload if user is editing a card (unless in Wait for AI mode)
-      if (!waitingForAI && document.querySelector('.card.editing')) return;
+      // Skip reload if user is actively editing a card
+      if (document.querySelector('.card.editing')) return;
       // External change detected — reload
       const text = await file.text();
       const loaded = JSON.parse(text);
@@ -1803,7 +1754,6 @@ setInterval(async () => {
         if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
         renderAll();
         updateTransform();
-        if (waitingForAI) exitWaitMode();
         updateSyncStatus('Updated externally', true);
         console.log('[file] external change detected, reloaded');
       }

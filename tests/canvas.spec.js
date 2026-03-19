@@ -131,20 +131,25 @@ test.describe('Card Canvas - File Sync', () => {
 
     // Mock the File System Access API with proper async methods
     const savedData = await page.evaluate(async () => {
-      let writtenData = '';
-      const mockWritable = {
-        write: async (data) => { writtenData = data; },
-        close: async () => {},
-      };
+      let mockContent = '';
+      let mockTs = Date.now();
       const mockHandle = {
         name: 'test-canvas.json',
-        getFile: async () => new File(['{}'], 'test-canvas.json', { type: 'application/json' }),
-        createWritable: async () => mockWritable,
+        getFile: async () => new File([mockContent], 'test-canvas.json', { type: 'application/json', lastModified: mockTs }),
+        createWritable: async () => {
+          let buffer = '';
+          return {
+            write: async (data) => { buffer = data; },
+            close: async () => { mockContent = buffer; mockTs = Date.now(); },
+          };
+        },
       };
 
       fileHandle = mockHandle;
+      lastFileModified = mockTs;
+      lastFileSize = 0;
       await writeToFile();
-      return writtenData;
+      return mockContent;
     });
 
     const parsed = JSON.parse(savedData);
@@ -160,15 +165,25 @@ test.describe('Card Canvas - File Sync', () => {
     // Set up mock file handle
     await page.evaluate(() => {
       window._savedContent = [];
-      const mockWritable = {
-        write: async (data) => { window._savedContent.push(data); },
-        close: async () => {},
-      };
+      window._mockTs = Date.now();
+      window._mockContent = '';
       fileHandle = {
         name: 'test-autosave.json',
-        getFile: async () => new File(['{}'], 'test-autosave.json'),
-        createWritable: async () => mockWritable,
+        getFile: async () => new File([window._mockContent], 'test-autosave.json', { lastModified: window._mockTs }),
+        createWritable: async () => {
+          let buffer = '';
+          return {
+            write: async (data) => { buffer = data; },
+            close: async () => {
+              window._mockContent = buffer;
+              window._mockTs = Date.now();
+              window._savedContent.push(buffer);
+            },
+          };
+        },
       };
+      lastFileModified = window._mockTs;
+      lastFileSize = 0;
     });
 
     // Create and edit a card

@@ -12,22 +12,36 @@ async function injectMockFileSystem(page) {
   await page.evaluate(() => {
     // Simulated "disk" — a string holding the file contents
     window.__mockFileContent = '';
+    // Stable lastModified — only changes when content is written
+    window.__mockFileLastModified = Date.now();
 
     function createMockHandle(name, initialContent) {
       window.__mockFileContent = initialContent || '';
+      window.__mockFileLastModified = Date.now();
+      // Sync the app's tracking vars so optimistic concurrency doesn't false-trigger
+      if (typeof lastFileModified !== 'undefined') {
+        lastFileModified = window.__mockFileLastModified;
+        lastFileSize = (initialContent || '').length;
+      }
 
       return {
         name: name,
-        // getFile returns a snapshot of the current file content
+        // getFile returns a snapshot of the current file content with stable lastModified
         getFile: async () => {
-          return new File([window.__mockFileContent], name, { type: 'application/json' });
+          return new File([window.__mockFileContent], name, {
+            type: 'application/json',
+            lastModified: window.__mockFileLastModified
+          });
         },
         // createWritable returns a writable that overwrites the file content
         createWritable: async () => {
           let buffer = '';
           return {
             write: async (data) => { buffer = data; },
-            close: async () => { window.__mockFileContent = buffer; },
+            close: async () => {
+              window.__mockFileContent = buffer;
+              window.__mockFileLastModified = Date.now();
+            },
           };
         },
       };
@@ -664,9 +678,12 @@ test.describe('File Sync - Full Lifecycle', () => {
         { id: 'err-1', x: 100, y: 100, w: 200, h: 150, color: '#FFF8E7', content: 'Precious data' }
       );
       // Create a handle that fails on write
+      const errTs = Date.now();
+      lastFileModified = errTs;
+      lastFileSize = 0;
       fileHandle = {
         name: 'broken.json',
-        getFile: async () => new File([''], 'broken.json'),
+        getFile: async () => new File([''], 'broken.json', { lastModified: errTs }),
         createWritable: async () => { throw new Error('Disk full'); },
       };
     });
@@ -1015,9 +1032,12 @@ test.describe('File Sync - Full Lifecycle', () => {
       );
 
       // Create a handle that fails with NotAllowedError
+      const permTs = Date.now();
+      lastFileModified = permTs;
+      lastFileSize = 0;
       fileHandle = {
         name: 'locked.json',
-        getFile: async () => new File([''], 'locked.json'),
+        getFile: async () => new File([''], 'locked.json', { lastModified: permTs }),
         createWritable: async () => {
           const err = new DOMException('Permission denied', 'NotAllowedError');
           throw err;
