@@ -1880,7 +1880,6 @@ async function importCards() {
             }
           } catch (e) { /* invalid JSON in file */ }
         }
-        updateSyncStatus();
       } else {
         console.log('[sync] permission denied for stored handle');
         syncLabel.textContent = '';
@@ -1911,6 +1910,10 @@ async function importCards() {
   }
   renderAll();
   updateTransform();
+
+  // Update toolbar AFTER renderAll to ensure it's the final toolbar state
+  console.log('[init] calling updateSyncStatus, fileHandle:', !!fileHandle, fileHandle?.name);
+  updateSyncStatus();
 })();
 </script>
 
