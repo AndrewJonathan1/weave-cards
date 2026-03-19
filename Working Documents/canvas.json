@@ -1,13 +1,22 @@
 {
   "cards": [
     {
-      "id": "cmmwaz3slbc9w7",
-      "x": 2527,
-      "y": 2278,
+      "id": "cmmwzqe84vpamr",
+      "x": 240,
+      "y": 300,
       "w": 320,
       "h": 200,
       "color": "#FFF8E7",
-      "content": ""
+      "content": "Testing sync hello world AUTOSAVE TEST\n\nsup"
+    },
+    {
+      "id": "cmmx0j44c7da8e",
+      "x": 245,
+      "y": 592,
+      "w": 320,
+      "h": 200,
+      "color": "#FFF8E7",
+      "content": "Fuck yeah, amaze sa"
     }
   ],
   "connections": []
