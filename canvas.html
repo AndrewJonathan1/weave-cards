@@ -108,8 +108,9 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 .card-body a { color: var(--link); text-decoration: underline; }
 .card-body p { margin: 0.25em 0; }
 
-.card-body .md-src {
-  color: var(--text-muted); font-size: 0.85em;
+.card-body .md-h {
+  font-size: 0; line-height: 0; overflow: hidden;
+  display: inline; color: transparent; user-select: none; pointer-events: none;
 }
 .card-body .cursor {
   display: inline-block; width: 1.5px; height: 1.1em; background: var(--text);
@@ -154,7 +155,6 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 html.dark .card { color: #e8e8e8; }
 html.dark .card-body code { background: rgba(255,255,255,0.12); }
 html.dark .card-delete { color: rgba(255,255,255,0.35); }
-html.dark .card-body .md-src { color: rgba(255,255,255,0.3); }
 
 /* Toolbar */
 #toolbar {
@@ -327,56 +327,51 @@ function screenToWorld(sx, sy) {
 }
 
 // --- Markdown ---
-// Renders markdown to HTML. When editing=true, syntax markers (# ** * ` etc) are
-// wrapped in <span class="md-src"> so they appear faded but remain in the text.
-function renderMarkdown(src, editing) {
-  if (!src) return editing ? '<br>' : '<p style="color:var(--text-muted)">Click to edit</p>';
-  return src.split('\n\n').map(block => {
+// H() wraps consumed syntax characters in a hidden span so the rendered HTML
+// has a 1:1 character mapping with the raw text (needed for cursor placement).
+const H = (t) => '<span class="md-h">' + t + '</span>';
+
+function renderMarkdown(src) {
+  if (!src) return '';
+  const blocks = src.split('\n\n');
+  return blocks.map((block, i) => {
+    // Emit hidden \n\n between blocks for cursor mapping
+    const sep = i > 0 ? H('\n\n') : '';
     block = block.trim();
-    if (!block) return editing ? '<br>' : '';
+    if (!block) return sep;
     // Headings
     const hm = block.match(/^(#{1,3}) /);
     if (hm) {
       const lvl = hm[1].length;
       const tag = 'h' + lvl;
       const rest = block.slice(hm[0].length);
-      const prefix = editing ? '<span class="md-src">' + esc(hm[0]) + '</span>' : '';
-      const content = inlineRender(rest, editing) || (editing ? '\u200B' : '');
-      return `<${tag}>${prefix}${content}</${tag}>`;
+      return `${sep}<${tag}>${H(esc(hm[0]))}${inlineRender(rest)}</${tag}>`;
     }
     // Bullet lists
-    let lines = block.split('\n');
+    const lines = block.split('\n');
     if (lines.every(l => /^\s*[-*] /.test(l))) {
-      return '<ul>' + lines.map(l => {
+      return sep + '<ul>' + lines.map((l, j) => {
+        const nlSep = j > 0 ? H('\n') : '';
         const m = l.match(/^(\s*[-*] )/);
-        const prefix = editing && m ? '<span class="md-src">' + esc(m[1]) + '</span>' : '';
-        const liContent = inlineRender(l.replace(/^\s*[-*] /, ''), editing) || (editing ? '\u200B' : '');
-        return '<li>' + prefix + liContent + '</li>';
+        const prefix = m ? H(esc(m[1])) : '';
+        return nlSep + '<li>' + prefix + inlineRender(l.replace(/^\s*[-*] /, '')) + '</li>';
       }).join('') + '</ul>';
     }
-    // Paragraph
-    return '<p>' + lines.map(l => inlineRender(l, editing)).join('<br>') + '</p>';
-  }).join(editing ? '<br>' : '\n');
+    // Paragraph (single newlines become visible <br>)
+    return sep + '<p>' + lines.map((l, j) => {
+      const nlSep = j > 0 ? H('\n') + '<br>' : '';
+      return nlSep + inlineRender(l);
+    }).join('') + '</p>';
+  }).join('');
 }
 
-function inlineRender(s, editing) {
+function inlineRender(s) {
   s = esc(s);
-  if (editing) {
-    // Show syntax markers faded, content styled.
-    // Use placeholder chars for * inside replaced HTML to prevent italic regex
-    // from re-matching bold's asterisks.
-    s = s.replace(/`([^`]+)`/g, '<span class="md-src">`</span><code>$1</code><span class="md-src">`</span>');
-    s = s.replace(/\*\*(.+?)\*\*/g, '<span class="md-src">\u2736\u2736</span><strong>$1</strong><span class="md-src">\u2736\u2736</span>');
-    s = s.replace(/\*(.+?)\*/g, '<span class="md-src">*</span><em>$1</em><span class="md-src">*</span>');
-    // Restore bold markers
-    s = s.replace(/\u2736\u2736/g, '**');
-    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span class="md-src">[</span><a href="$2" target="_blank">$1</a><span class="md-src">]($2)</span>');
-  } else {
-    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-  }
+  s = s.replace(/`([^`]+)`/g, H('`') + '<code>$1</code>' + H('`'));
+  s = s.replace(/\*\*(.+?)\*\*/g, H('\u2736\u2736') + '<strong>$1</strong>' + H('\u2736\u2736'));
+  s = s.replace(/\*(.+?)\*/g, H('*') + '<em>$1</em>' + H('*'));
+  s = s.replace(/\u2736\u2736/g, '**');
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, H('[') + '<a href="$2" target="_blank">$1</a>' + H(']($2)'));
   return s;
 }
 
@@ -384,81 +379,11 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// --- Cursor helpers for contenteditable ---
-// Get cursor offset as character position in the element's text content
-function getCursorOffset(el) {
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return 0;
-  const range = sel.getRangeAt(0);
-  const pre = document.createRange();
-  pre.selectNodeContents(el);
-  pre.setEnd(range.startContainer, range.startOffset);
-  return pre.toString().length;
-}
-
-// Restore cursor to character offset in element's text content
-function setCursorOffset(el, offset) {
-  const sel = window.getSelection();
-  const range = document.createRange();
-  let found = false;
-
-  function walk(node) {
-    if (found) return;
-    if (node.nodeType === 3) { // text node
-      if (offset <= node.length) {
-        range.setStart(node, offset);
-        range.collapse(true);
-        found = true;
-      } else {
-        offset -= node.length;
-      }
-    } else {
-      for (const child of node.childNodes) {
-        walk(child);
-        if (found) return;
-      }
-    }
-  }
-  walk(el);
-  if (!found) {
-    // Put cursor at end
-    range.selectNodeContents(el);
-    range.collapse(false);
-  }
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-// Extract plain text from contenteditable, converting block elements to proper newlines
-function getPlainText(el) {
-  let text = '';
-  function walk(node, isFirst) {
-    if (node.nodeType === 3) {
-      text += node.textContent;
-    } else if (node.nodeType === 1) {
-      const tag = node.tagName;
-      const isBlock = /^(P|H[1-6]|LI|UL|OL|DIV|BR)$/.test(tag);
-      // Add newlines before block elements (except first)
-      if (isBlock && text.length > 0 && !text.endsWith('\n')) {
-        if (tag === 'BR') { text += '\n'; return; }
-        // Double newline for paragraph/heading separation, single for list items
-        if (/^(P|H[1-6])$/.test(tag)) text += '\n\n';
-        else if (tag === 'LI' && !isFirst) text += '\n';
-      }
-      let first = true;
-      for (const child of node.childNodes) {
-        walk(child, first);
-        first = false;
-      }
-    }
-  }
-  let first = true;
-  for (const child of el.childNodes) {
-    walk(child, first);
-    first = false;
-  }
-  // Clean up: strip zero-width spaces, collapse 3+ newlines to 2
-  return text.replace(/\u200B/g, '').replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
+// Render markdown for display (no hidden cursor-mapping spans)
+function renderView(src) {
+  const html = renderMarkdown(src);
+  // Strip md-h spans via regex (they only contain text, never nested HTML)
+  return html.replace(/<span class="md-h">[^<]*<\/span>/g, '');
 }
 
 function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -502,7 +427,7 @@ function renderCard(c) {
   // Body
   const body = document.createElement('div');
   body.className = 'card-body';
-  body.innerHTML = renderMarkdown(c.content, false);
+  body.innerHTML = renderView(c.content) || '<p style="color:var(--text-muted)">Click to edit</p>';
   el.appendChild(body);
 
   // Resize handle
@@ -587,39 +512,22 @@ function startEditing(c, cardEl) {
   cardEl.classList.add('editing');
 
   function renderWithCursor() {
-    body.innerHTML = renderMarkdown(raw, true) || '<br>';
-    // Walk text nodes to insert cursor span at the right character offset
-    const pos = ta.selectionStart;
-    let remaining = pos;
+    body.innerHTML = renderMarkdown(raw) || '<br>';
+    // Walk all text nodes to find cursor position. Since md-h spans preserve
+    // a 1:1 char mapping with the raw text, we just count characters.
+    let remaining = ta.selectionStart;
     const cursor = document.createElement('span');
     cursor.className = 'cursor';
 
     function walk(node) {
-      if (node.nodeType === 3) { // text node
-        // Skip zero-width spaces in counting
-        const text = node.textContent;
-        let realLen = 0;
-        for (let i = 0; i < text.length; i++) {
-          if (text[i] !== '\u200B') realLen++;
-        }
-        if (remaining <= realLen) {
-          // Find the actual character index accounting for zero-width spaces
-          let charIdx = 0;
-          for (let i = 0; i < text.length && charIdx < remaining; i++) {
-            if (text[i] !== '\u200B') charIdx++;
-            if (charIdx === remaining) { charIdx = i + 1; break; }
-            if (i === text.length - 1 && charIdx < remaining) charIdx = text.length;
-          }
-          if (remaining === 0) charIdx = 0;
-          // Split text node and insert cursor
-          const after = node.splitText(charIdx);
+      if (node.nodeType === 3) {
+        if (remaining <= node.length) {
+          const after = node.splitText(remaining);
           node.parentNode.insertBefore(cursor, after);
           return true;
         }
-        remaining -= realLen;
+        remaining -= node.length;
       } else if (node.nodeType === 1) {
-        // Skip md-src spans in character counting (they contain syntax markers not in raw text)
-        if (node.classList && node.classList.contains('md-src')) return false;
         for (const child of Array.from(node.childNodes)) {
           if (walk(child)) return true;
         }
@@ -630,11 +538,8 @@ function startEditing(c, cardEl) {
     for (const child of Array.from(body.childNodes)) {
       if (walk(child)) break;
     }
-    // If cursor wasn't placed (e.g. at very end), append it
     if (!cursor.parentNode) {
-      const last = body.lastChild;
-      if (last) last.appendChild ? last.appendChild(cursor) : body.appendChild(cursor);
-      else body.appendChild(cursor);
+      (body.lastChild || body).appendChild(cursor);
     }
   }
 
@@ -677,7 +582,7 @@ function startEditing(c, cardEl) {
     ta.removeEventListener('mouseup', onSelectionChange);
     body.removeEventListener('mousedown', refocus);
     c.content = raw;
-    body.innerHTML = renderMarkdown(c.content, false);
+    body.innerHTML = renderView(c.content) || '<p style="color:var(--text-muted)">Click to edit</p>';
     cardEl.classList.remove('editing');
     ta.remove();
     scheduleSave();
