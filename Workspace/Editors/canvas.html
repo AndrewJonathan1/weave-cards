@@ -233,11 +233,29 @@ html.dark #sync-btn.saved {
 }
 
 
-#hint {
-  position: fixed; bottom: 14px; right: 18px; z-index: 100;
-  font-size: 11px; color: var(--hint-color); line-height: 1.5; text-align: right;
-  pointer-events: none; user-select: none;
+#help-btn {
+  position: fixed; bottom: 14px; right: 14px; z-index: 101;
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--toolbar-border);
+  background: var(--toolbar-bg); color: var(--text-muted); font-size: 14px; font-family: inherit;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px var(--toolbar-shadow); transition: background 0.1s;
+  line-height: 1; padding: 0;
 }
+#help-btn:hover { background: var(--toolbar-hover); color: var(--text); }
+#help-panel {
+  display: none; position: fixed; bottom: 50px; right: 14px; z-index: 101;
+  background: var(--toolbar-bg); border: 1px solid var(--toolbar-border);
+  border-radius: 10px; padding: 14px 16px; max-width: 280px;
+  box-shadow: 0 4px 16px var(--toolbar-shadow); font-size: 11px; color: var(--text);
+  line-height: 1.6; user-select: none;
+}
+#help-panel.open { display: block; }
+#help-panel h3 { font-size: 12px; margin: 0 0 8px 0; font-weight: 600; }
+#help-panel h4 { font-size: 11px; margin: 10px 0 4px 0; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+#help-panel h4:first-of-type { margin-top: 0; }
+#help-panel .help-row { display: flex; justify-content: space-between; gap: 12px; }
+#help-panel .help-key { color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; white-space: nowrap; flex-shrink: 0; }
+#help-panel .help-desc { text-align: right; white-space: nowrap; }
 
 #temp-line { pointer-events: none; }
 </style>
@@ -258,7 +276,33 @@ html.dark #sync-btn.saved {
     <svg id="svg-layer"></svg>
   </div>
 </div>
-<div id="hint">double-click to add card<br>click card to edit, drag to move<br>scroll to pan, pinch/ctrl+scroll to zoom</div>
+<button id="help-btn" onclick="document.getElementById('help-panel').classList.toggle('open')">?</button>
+<div id="help-panel">
+  <h3>Shortcuts &amp; Features</h3>
+  <h4>Cards</h4>
+  <div class="help-row"><span class="help-key">double-click canvas</span><span class="help-desc">add new card</span></div>
+  <div class="help-row"><span class="help-key">click card</span><span class="help-desc">edit (markdown)</span></div>
+  <div class="help-row"><span class="help-key">drag card</span><span class="help-desc">move</span></div>
+  <div class="help-row"><span class="help-key">Escape</span><span class="help-desc">stop editing</span></div>
+  <h4>Selection</h4>
+  <div class="help-row"><span class="help-key">click card</span><span class="help-desc">select</span></div>
+  <div class="help-row"><span class="help-key">Shift+click</span><span class="help-desc">toggle selection</span></div>
+  <div class="help-row"><span class="help-key">drag empty space</span><span class="help-desc">rubber band select</span></div>
+  <div class="help-row"><span class="help-key">Cmd+A</span><span class="help-desc">select all</span></div>
+  <div class="help-row"><span class="help-key">Escape</span><span class="help-desc">deselect all</span></div>
+  <h4>Actions</h4>
+  <div class="help-row"><span class="help-key">Delete / Backspace</span><span class="help-desc">delete selected</span></div>
+  <div class="help-row"><span class="help-key">Cmd+D</span><span class="help-desc">duplicate selected</span></div>
+  <div class="help-row"><span class="help-key">Arrow keys</span><span class="help-desc">nudge (10px)</span></div>
+  <div class="help-row"><span class="help-key">color swatch</span><span class="help-desc">recolor selected</span></div>
+  <h4>Canvas</h4>
+  <div class="help-row"><span class="help-key">scroll / trackpad</span><span class="help-desc">pan</span></div>
+  <div class="help-row"><span class="help-key">Space+drag</span><span class="help-desc">pan</span></div>
+  <div class="help-row"><span class="help-key">Ctrl+scroll / pinch</span><span class="help-desc">zoom</span></div>
+  <h4>File</h4>
+  <div class="help-row"><span class="help-key">Sync to File</span><span class="help-desc">save &amp; auto-sync</span></div>
+  <div class="help-row"><span class="help-key">Merge</span><span class="help-desc">import cards from file</span></div>
+</div>
 
 <script>
 // --- Theme (initialized later, after color swatches exist) ---
