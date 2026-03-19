@@ -87,14 +87,9 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
   cursor: grab; user-select: none;
 }
 .card:hover { box-shadow: 0 4px 16px var(--card-shadow-hover); }
-/* Extend hover zone above card so color palette stays reachable */
-.card::before {
-  content: ''; position: absolute; top: -35px; left: 0; right: 0; height: 35px;
-  pointer-events: none;
-}
-.card:hover::before { pointer-events: auto; }
 .card.dragging { cursor: grabbing; }
 .card.editing { cursor: text; user-select: auto; border-color: var(--link); }
+.card.selected { border: 2px solid var(--link); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), 0 4px 16px var(--card-shadow-hover); }
 .card-delete {
   display: none; background: none; border: none; cursor: pointer; font-size: 14px;
   color: var(--text-muted); padding: 2px 4px; line-height: 1; position: absolute;
@@ -145,15 +140,11 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 .conn-right:hover { transform: translate(50%, -50%) scale(1.3); }
 
 .color-palette {
-  display: none; position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+  display: none; position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
   background: var(--palette-bg); border-radius: 6px; padding: 3px; box-shadow: 0 2px 10px var(--palette-shadow);
   gap: 3px; z-index: 10; flex-direction: row;
-  padding-bottom: 12px; margin-bottom: -12px;
 }
 .card:hover .color-palette { display: flex; }
-.card::before {
-  content: ''; position: absolute; top: -35px; left: 0; right: 0; height: 35px;
-}
 .color-swatch {
   width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
 }
@@ -249,6 +240,7 @@ function toggleTheme() {
 var state = { cards: [], connections: [] };
 var fileHandle = null;
 var saveTimer = null;
+var selectedCards = new Set();
 
 // Light hex + dark hex for each color.
 // Dark variants: same hue, saturation boosted, lightness ~22-28%
@@ -422,6 +414,7 @@ function renderCard(c) {
   });
 
   // Unified: mousedown anywhere on card. If you move > threshold = drag. If you release in place on body = edit.
+  // Supports Shift+Click for multi-select and multi-drag.
   const DRAG_THRESHOLD = 4;
   el.onmousedown = (e) => {
     if (e.button !== 0) return;
@@ -431,11 +424,29 @@ function renderCard(c) {
     e.preventDefault();
     const startX = e.clientX, startY = e.clientY;
     const clickedBody = !!e.target.closest('.card-body');
+    const isShift = e.shiftKey;
     let dragging = false;
+
+    // Handle selection on mousedown
+    if (isShift) {
+      toggleSelection(c.id);
+    } else if (!selectedCards.has(c.id)) {
+      // Regular click on unselected card: clear selection
+      clearSelection();
+    }
 
     const startWorld = screenToWorld(startX, startY);
     const offX = startWorld.x - c.x;
     const offY = startWorld.y - c.y;
+
+    // For multi-drag: record start positions of all selected cards
+    const dragGroup = [];
+    if (selectedCards.has(c.id) && selectedCards.size > 1) {
+      selectedCards.forEach(id => {
+        const sc = state.cards.find(card => card.id === id);
+        if (sc) dragGroup.push({ card: sc, startX: sc.x, startY: sc.y });
+      });
+    }
 
     function onMove(e) {
       const dx = e.clientX - startX, dy = e.clientY - startY;
@@ -446,10 +457,29 @@ function renderCard(c) {
       }
       if (dragging) {
         const w = screenToWorld(e.clientX, e.clientY);
-        c.x = w.x - offX;
-        c.y = w.y - offY;
-        el.style.left = c.x + 'px';
-        el.style.top = c.y + 'px';
+        const newX = w.x - offX;
+        const newY = w.y - offY;
+
+        if (dragGroup.length > 1) {
+          // Multi-drag: move all selected cards by the same delta
+          const deltaX = newX - dragGroup.find(g => g.card.id === c.id).startX;
+          const deltaY = newY - dragGroup.find(g => g.card.id === c.id).startY;
+          dragGroup.forEach(({ card, startX: sx, startY: sy }) => {
+            card.x = sx + deltaX;
+            card.y = sy + deltaY;
+            const cardEl = document.getElementById(card.id);
+            if (cardEl) {
+              cardEl.style.left = card.x + 'px';
+              cardEl.style.top = card.y + 'px';
+            }
+          });
+        } else {
+          // Single card drag
+          c.x = newX;
+          c.y = newY;
+          el.style.left = c.x + 'px';
+          el.style.top = c.y + 'px';
+        }
         renderConnections();
       }
     }
@@ -460,7 +490,10 @@ function renderCard(c) {
         el.style.zIndex = 1;
         el.classList.remove('dragging');
         scheduleSave();
+      } else if (isShift) {
+        // Shift-click without drag: selection already toggled in mousedown
       } else if (clickedBody) {
+        clearSelection();
         startEditing(c, el);
       }
     }
@@ -594,6 +627,46 @@ function renderConnections() {
   });
 }
 
+// --- Multi-select ---
+function clearSelection() {
+  selectedCards.forEach(id => {
+    document.getElementById(id)?.classList.remove('selected');
+  });
+  selectedCards.clear();
+}
+
+function toggleSelection(id) {
+  if (selectedCards.has(id)) {
+    selectedCards.delete(id);
+    document.getElementById(id)?.classList.remove('selected');
+  } else {
+    selectedCards.add(id);
+    document.getElementById(id)?.classList.add('selected');
+  }
+}
+
+function selectCard(id) {
+  if (!selectedCards.has(id)) {
+    selectedCards.add(id);
+    document.getElementById(id)?.classList.add('selected');
+  }
+}
+
+function deleteSelectedCards() {
+  if (selectedCards.size === 0) return;
+  if (selectedCards.size > 1 && !confirm(`Delete ${selectedCards.size} selected cards?`)) return;
+  stopEditing();
+  const ids = [...selectedCards];
+  ids.forEach(id => {
+    state.cards = state.cards.filter(c => c.id !== id);
+    state.connections = state.connections.filter(cn => cn.from !== id && cn.to !== id);
+    document.getElementById(id)?.remove();
+  });
+  selectedCards.clear();
+  renderConnections();
+  scheduleSave();
+}
+
 // --- Card CRUD ---
 function addCard(x, y) {
   const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
@@ -675,12 +748,23 @@ viewport.addEventListener('wheel', (e) => {
   }
 }, { passive: false });
 
-// Click on empty canvas stops any active editing
+// Click on empty canvas stops any active editing and clears selection
 viewport.addEventListener('mousedown', (e) => {
   if (!e.target.closest('.card') && !e.target.closest('#toolbar')) {
     stopEditing();
+    clearSelection();
   }
 }, true);
+
+// Delete key deletes selected cards
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCards.size > 0
+      && !e.target.matches('textarea,input,[contenteditable]')
+      && !document.querySelector('.card.editing')) {
+    e.preventDefault();
+    deleteSelectedCards();
+  }
+});
 
 // Double-click empty space to create card
 viewport.addEventListener('dblclick', (e) => {
