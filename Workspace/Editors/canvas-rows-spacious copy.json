@@ -2,8 +2,8 @@
   "cards": [
     {
       "id": "r0-hdr",
-      "x": 600,
-      "y": 50,
+      "x": 614.4628714667404,
+      "y": 46.38428213331494,
       "w": 500,
       "h": 90,
       "color": "#FFF3C4",
@@ -61,7 +61,7 @@
       "w": 300,
       "h": 220,
       "color": "#FFF8E7",
-      "content": "## PRESENTATION\nof a **Thing** or **Person**\n\n**Convey:**\n1. Information\n2. Status\n3. Vibe"
+      "content": "# Presentation\n\nThing or Person\n\n**Convey:\n**1. Information\n2. Status\n3. Vibe"
     },
     {
       "id": "r1-proc",
@@ -70,7 +70,7 @@
       "w": 300,
       "h": 170,
       "color": "#FFF8E7",
-      "content": "## PROCESS\n*Manage a*\n\n1. A Service Process\n2. An Event Process"
+      "content": "# PROCESS\n\n1. A Service Process\n2. An Event Process"
     },
     {
       "id": "r1-dist",
@@ -579,8 +579,8 @@
   ],
   "connections": [],
   "camera": {
-    "x": -548.9665654286259,
-    "y": -572.1519931580447,
-    "zoom": 0.553140503142641
+    "x": -142.2575066743093,
+    "y": 285.88595771326084,
+    "zoom": 0.830189419520318
   }
 }

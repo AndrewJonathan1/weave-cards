@@ -1,0 +1,17 @@
+Hey — check this out: https://weave-cards.pages.dev/
+
+It's a card canvas tool I built. Infinite canvas, markdown cards with live rendering (headings, bold, lists), drag to move, connections between cards, color coding, rubber band selection, undo/redo — all the standard canvas stuff.
+
+The cool part: everything saves to a single JSON file. Cards, connections, positions, camera — all of it. Which means an LLM can read the JSON, calculate spacing, and programmatically insert new cards without overlapping anything. There's a full README in the app (click the ? button → README) with the exact format, rendering dimensions, and spacing formulas.
+
+I've been using it to map out the business thinking with Claude. Claude generates cards, I merge them in, rearrange, add my own. Collaborative spatial thinking.
+
+GitHub: https://github.com/AndrewJonathan1/weave-cards
+
+To run locally: clone it, cd Workspace/Editors, npm install, npm run dev
+
+Think about this as a card/spatial view for Weave. Same data structure could power different visualizations.
+
+I'm attaching a JSON file (canvas-rows-spacious.json) with the current state of our business thinking mapped out — 64 cards covering the service model, niches, strategies, everything. Open it with the "Open" button in the app.
+
+Shortcuts: Cmd+Z undo, Cmd+D duplicate, Cmd+A select all, arrow keys to nudge, shift+click multi-select, drag empty space for rubber band select. Click ? for all shortcuts.

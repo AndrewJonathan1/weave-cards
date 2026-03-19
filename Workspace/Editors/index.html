@@ -300,6 +300,27 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   z-index: 1;
 }
 #readme-close:hover { background: var(--toolbar-border, #e5e5e0); color: var(--text, #1a1a1a); }
+
+/* Wait for AI overlay */
+#wait-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center; flex-direction: column;
+  cursor: pointer; user-select: none;
+}
+#wait-overlay.open { display: flex; }
+#wait-overlay .wait-label {
+  font-size: 18px; font-weight: 600; color: white;
+  letter-spacing: 0.01em;
+  animation: waitPulse 2s ease-in-out infinite;
+}
+#wait-overlay .wait-hint {
+  font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 10px;
+}
+@keyframes waitPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
 </style>
 </head>
 <body>
@@ -307,12 +328,18 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   <button class="tb-btn" onclick="openFile()">Open</button>
   <button class="tb-btn" onclick="saveAsFile()">Save As</button>
   <button id="import-btn" class="tb-btn" onclick="importCards()">Add Cards</button>
+  <button id="reload-btn" class="tb-btn" onclick="reloadFile()" style="display:none">Reload</button>
+  <button id="wait-btn" class="tb-btn" onclick="enterWaitMode()" style="display:none">Wait for AI</button>
   <span id="file-status"><span class="status-dot"></span><span id="file-label"></span></span>
   <div class="sep"></div>
   <div id="toolbar-colors"></div>
   <div class="sep"></div>
   <button id="theme-toggle" onclick="toggleTheme()"></button>
   <span id="zoom-display">100%</span>
+</div>
+<div id="wait-overlay" onclick="exitWaitMode()">
+  <span class="wait-label">Waiting for AI changes...</span>
+  <span class="wait-hint">Click or press Escape to cancel</span>
 </div>
 <div id="rubber-band"></div>
 <div id="canvas-viewport">
@@ -355,6 +382,8 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   <div class="help-row"><span class="help-key">Open</span><span class="help-desc">load file + auto-sync</span></div>
   <div class="help-row"><span class="help-key">Save As</span><span class="help-desc">save to file + auto-sync</span></div>
   <div class="help-row"><span class="help-key">Add Cards</span><span class="help-desc">add cards from file</span></div>
+  <div class="help-row"><span class="help-key">Reload</span><span class="help-desc">re-read file from disk</span></div>
+  <div class="help-row"><span class="help-key">Wait for AI</span><span class="help-desc">lock canvas, auto-reload on change</span></div>
 </div>
 
 <!-- README overlay -->
@@ -1366,6 +1395,13 @@ document.addEventListener('keydown', (e) => {
   var isEditing = !!document.querySelector('.card.editing');
   var inInput = e.target.matches('textarea,input,[contenteditable]');
 
+  // Escape — dismiss Wait for AI overlay
+  if (e.key === 'Escape' && waitingForAI) {
+    e.preventDefault();
+    exitWaitMode();
+    return;
+  }
+
   // Cmd/Ctrl+Z — undo, Cmd/Ctrl+Shift+Z — redo (only when not editing a card)
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !isEditing) {
     e.preventDefault();
@@ -1426,6 +1462,9 @@ viewport.addEventListener('dblclick', (e) => {
 // --- File System Access API ---
 var isWriting = false;
 var pendingWrite = false;
+var justWrote = false;
+var lastFileModified = 0;
+var lastFileSize = 0;
 var LOCAL_STORAGE_KEY = 'canvas-state';
 var HANDLE_DB_NAME = 'canvas-file-handles';
 var HANDLE_STORE = 'handles';
@@ -1516,6 +1555,11 @@ function updateSyncStatus(msg, temporary) {
     syncLabel.textContent = '';
     fileStatus.classList.remove('active');
   }
+  // Toggle Reload / Wait for AI button visibility
+  var reloadBtn = document.getElementById('reload-btn');
+  if (reloadBtn) reloadBtn.style.display = fileHandle ? '' : 'none';
+  var waitBtn = document.getElementById('wait-btn');
+  if (waitBtn) waitBtn.style.display = fileHandle ? '' : 'none';
 }
 function showSaved() {
   fileStatus.classList.remove('saving');
@@ -1561,6 +1605,8 @@ async function openFile() {
     });
     console.log('[file] file handle obtained:', handle.name);
     const file = await handle.getFile();
+    lastFileModified = file.lastModified;
+    lastFileSize = file.size;
     const text = await file.text();
     if (text.trim()) {
       try {
@@ -1581,6 +1627,31 @@ async function openFile() {
   } catch (e) {
     console.error('[file] Open failed:', e.name, e.message, e);
     if (e.name !== 'AbortError') { updateSyncStatus('Open failed', true); }
+  }
+}
+
+async function reloadFile() {
+  if (!fileHandle) return;
+  try {
+    const file = await fileHandle.getFile();
+    lastFileModified = file.lastModified;
+    lastFileSize = file.size;
+    const text = await file.text();
+    if (!text.trim()) return;
+    const loaded = JSON.parse(text);
+    if (!loaded.cards) return;
+    pushUndo();
+    stopEditing();
+    clearSelection();
+    state = loaded;
+    if (!state.connections) state.connections = [];
+    if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
+    renderAll();
+    updateTransform();
+    updateSyncStatus('Reloaded', true);
+  } catch (e) {
+    console.error('[file] Reload failed:', e.name, e.message);
+    updateSyncStatus('Reload failed', true);
   }
 }
 
@@ -1651,6 +1722,7 @@ async function writeToFile() {
     const writable = await fileHandle.createWritable();
     await writable.write(JSON.stringify(state, null, 2));
     await writable.close();
+    justWrote = true;
     console.log('[save] write complete');
     updateSyncStatus('Saved', true);
   } catch (e) {
@@ -1678,6 +1750,55 @@ function scheduleSave() {
   }, 300);
   console.log('[save] new timer set:', saveTimer);
 }
+
+// --- Wait for AI mode ---
+var waitingForAI = false;
+
+function enterWaitMode() {
+  if (!fileHandle) return;
+  stopEditing();
+  clearSelection();
+  waitingForAI = true;
+  document.getElementById('wait-overlay').classList.add('open');
+}
+
+function exitWaitMode() {
+  waitingForAI = false;
+  document.getElementById('wait-overlay').classList.remove('open');
+}
+
+// --- Auto-poll file for external changes ---
+setInterval(async () => {
+  if (!fileHandle) return;
+  if (isWriting) return;
+  try {
+    const file = await fileHandle.getFile();
+    if (file.lastModified !== lastFileModified || file.size !== lastFileSize) {
+      lastFileModified = file.lastModified;
+      lastFileSize = file.size;
+      // Skip reload if we just wrote this change ourselves
+      if (justWrote) { justWrote = false; return; }
+      // Skip reload if user is editing a card (unless in Wait for AI mode)
+      if (!waitingForAI && document.querySelector('.card.editing')) return;
+      // External change detected — reload
+      const text = await file.text();
+      const loaded = JSON.parse(text);
+      if (loaded.cards) {
+        pushUndo();
+        stopEditing();
+        clearSelection();
+        state = loaded;
+        if (!state.connections) state.connections = [];
+        if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
+        renderAll();
+        updateTransform();
+        if (waitingForAI) exitWaitMode();
+        updateSyncStatus('Updated externally', true);
+        console.log('[file] external change detected, reloaded');
+      }
+    }
+  } catch (e) { /* file might be mid-write, ignore */ }
+}, 1000);
 
 async function importCards() {
   console.log('[file] importCards called');
@@ -1727,56 +1848,47 @@ async function importCards() {
 }
 
 // --- Init ---
-if (loadFromLocalStorage()) {
-  renderAll();
-}
-// Restore camera if saved
-if (state.camera) {
-  camX = state.camera.x || 0;
-  camY = state.camera.y || 0;
-  zoom = state.camera.zoom || 1;
-}
-updateTransform();
-
-// Reconnect to previously synced file
-(async function reconnectFile() {
+// File takes priority over localStorage. Only fall back to localStorage
+// when there's no stored file handle or reconnection fails.
+(async function init() {
   var savedName = localStorage.getItem('canvas-sync-filename');
+  var reconnected = false;
+
+  // Try to reconnect to previously synced file first
   if (savedName) {
-    // Show filename immediately while we check permission
     syncLabel.textContent = savedName;
     fileStatus.classList.add('active');
   }
   try {
     var handle = await loadFileHandle();
-    if (!handle) {
-      if (savedName) { syncLabel.textContent = ''; fileStatus.classList.remove('active'); localStorage.removeItem('canvas-sync-filename'); }
-      return;
-    }
-    var perm = await handle.requestPermission({ mode: 'readwrite' });
-    if (perm === 'granted') {
-      fileHandle = handle;
-      console.log('[sync] reconnected to', handle.name);
-      // Load latest content from file
-      var file = await handle.getFile();
-      var text = await file.text();
-      if (text.trim()) {
-        try {
-          var loaded = JSON.parse(text);
-          if (loaded.cards && loaded.cards.length > 0) {
-            state = loaded;
-            if (!state.connections) state.connections = [];
-            if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
-            renderAll();
-            updateTransform();
-          }
-        } catch (e) { /* invalid JSON in file */ }
+    if (handle) {
+      var perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        fileHandle = handle;
+        console.log('[sync] reconnected to', handle.name);
+        var file = await handle.getFile();
+        lastFileModified = file.lastModified;
+        lastFileSize = file.size;
+        var text = await file.text();
+        if (text.trim()) {
+          try {
+            var loaded = JSON.parse(text);
+            if (loaded.cards && loaded.cards.length > 0) {
+              state = loaded;
+              if (!state.connections) state.connections = [];
+              reconnected = true;
+            }
+          } catch (e) { /* invalid JSON in file */ }
+        }
+        updateSyncStatus();
+      } else {
+        console.log('[sync] permission denied for stored handle');
+        syncLabel.textContent = '';
+        fileStatus.classList.remove('active');
+        clearFileHandle();
       }
-      updateSyncStatus();
     } else {
-      console.log('[sync] permission denied for stored handle');
-      syncLabel.textContent = '';
-      fileStatus.classList.remove('active');
-      clearFileHandle();
+      if (savedName) { syncLabel.textContent = ''; fileStatus.classList.remove('active'); localStorage.removeItem('canvas-sync-filename'); }
     }
   } catch (e) {
     console.warn('[sync] reconnect failed:', e);
@@ -1785,6 +1897,20 @@ updateTransform();
     syncLabel.textContent = '';
     fileStatus.classList.remove('active');
   }
+
+  // Fall back to localStorage if file reconnection didn't load data
+  if (!reconnected) {
+    loadFromLocalStorage();
+  }
+
+  // Restore camera and render
+  if (state.camera) {
+    camX = state.camera.x || 0;
+    camY = state.camera.y || 0;
+    zoom = state.camera.zoom || 1;
+  }
+  renderAll();
+  updateTransform();
 })();
 </script>
 
