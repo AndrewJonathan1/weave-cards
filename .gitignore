@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+.playwright-mcp/
+package.json
+package-lock.json
+*.m4a

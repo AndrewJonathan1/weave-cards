@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Canvas</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f0;
+  --dot: #ddd;
+  --card-border: rgba(0,0,0,0.1);
+  --card-shadow: rgba(0,0,0,0.08);
+  --card-shadow-hover: rgba(0,0,0,0.13);
+  --text: #333;
+  --text-muted: rgba(0,0,0,0.3);
+  --border-subtle: rgba(0,0,0,0.06);
+  --code-bg: rgba(0,0,0,0.06);
+  --link: #2563eb;
+  --palette-bg: white;
+  --palette-shadow: rgba(0,0,0,0.15);
+  --toolbar-bg: white;
+  --toolbar-shadow: rgba(0,0,0,0.12);
+  --toolbar-border: #e0e0e0;
+  --toolbar-hover: #f0f0ea;
+  --resize-color: rgba(0,0,0,0.15);
+  --conn-handle: rgba(0,0,0,0.15);
+  --conn-line: #bbb;
+  --hint-color: rgba(0,0,0,0.25);
+  --delete-hover: #e74c3c;
+  --sync-active: #4a9;
+}
+html.dark {
+  --bg: #1a1a1e;
+  --dot: #333;
+  --card-border: rgba(255,255,255,0.1);
+  --card-shadow: rgba(0,0,0,0.3);
+  --card-shadow-hover: rgba(0,0,0,0.5);
+  --text: #e0e0e0;
+  --text-muted: rgba(255,255,255,0.35);
+  --border-subtle: rgba(255,255,255,0.08);
+  --code-bg: rgba(255,255,255,0.1);
+  --link: #6ea8fe;
+  --palette-bg: #2a2a2e;
+  --palette-shadow: rgba(0,0,0,0.4);
+  --toolbar-bg: #2a2a2e;
+  --toolbar-shadow: rgba(0,0,0,0.4);
+  --toolbar-border: #444;
+  --toolbar-hover: #3a3a3e;
+  --resize-color: rgba(255,255,255,0.15);
+  --conn-handle: rgba(255,255,255,0.2);
+  --conn-line: #555;
+  --hint-color: rgba(255,255,255,0.2);
+  --delete-hover: #e74c3c;
+  --sync-active: #5cb87a;
+}
+html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--text); }
+
+#canvas-viewport {
+  width: 100%; height: 100%; overflow: hidden; background: var(--bg); position: relative; cursor: default;
+}
+#canvas-viewport.panning { cursor: grabbing; }
+
+/* Dot grid on viewport via background — scales with zoom */
+#canvas-viewport {
+  --grid-size: 24px;
+  background-image: radial-gradient(circle, var(--dot) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+#canvas {
+  position: absolute; top: 0; left: 0;
+  transform-origin: 0 0;
+  /* transform set by JS */
+}
+
+#svg-layer {
+  position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 0;
+}
+#svg-layer line { pointer-events: stroke; cursor: pointer; }
+#svg-layer line:hover { stroke: var(--delete-hover) !important; stroke-width: 3 !important; }
+
+.card {
+  position: absolute; border-radius: 8px; border: 1px solid var(--card-border);
+  box-shadow: 0 2px 8px var(--card-shadow); display: flex; flex-direction: column;
+  min-width: 160px; min-height: 80px; z-index: 1; transition: box-shadow 0.15s;
+  cursor: grab; user-select: none;
+}
+.card:hover { box-shadow: 0 4px 16px var(--card-shadow-hover); }
+.card.dragging { cursor: grabbing; }
+.card.editing { cursor: text; user-select: auto; border-color: var(--link); }
+.card-delete {
+  display: none; background: none; border: none; cursor: pointer; font-size: 14px;
+  color: var(--text-muted); padding: 2px 4px; line-height: 1; position: absolute;
+  top: 4px; right: 4px; z-index: 3;
+}
+.card-delete:hover { color: var(--delete-hover); }
+.card:hover .card-delete { display: block; }
+.card-body {
+  flex: 1; padding: 10px 12px; overflow-y: auto; font-size: 14px; line-height: 1.55;
+  cursor: text; word-wrap: break-word;
+}
+.card-body h1 { font-size: 1.3em; margin: 0.3em 0; }
+.card-body h2 { font-size: 1.15em; margin: 0.25em 0; }
+.card-body h3 { font-size: 1.05em; margin: 0.2em 0; }
+.card-body ul { padding-left: 1.3em; margin: 0.2em 0; }
+.card-body code { background: var(--code-bg); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+.card-body a { color: var(--link); text-decoration: underline; }
+.card-body p { margin: 0.25em 0; }
+
+.card-body .md-src {
+  color: var(--text-muted); font-size: 0.85em;
+}
+.card-body .cursor {
+  display: inline-block; width: 1.5px; height: 1.1em; background: var(--text);
+  vertical-align: text-bottom; margin: 0 -0.5px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.resize-handle {
+  position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; cursor: nwse-resize;
+}
+.resize-handle::after {
+  content: ''; position: absolute; bottom: 4px; right: 4px; width: 8px; height: 8px;
+  border-right: 2px solid var(--resize-color); border-bottom: 2px solid var(--resize-color);
+}
+
+.conn-handle {
+  position: absolute; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--conn-handle); display: none; z-index: 2; cursor: crosshair;
+  transform: translate(-50%, -50%);
+}
+.conn-handle:hover { background: var(--link); transform: translate(-50%, -50%) scale(1.3); }
+.card:hover .conn-handle { display: block; }
+.conn-top { top: 0; left: 50%; }
+.conn-bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+.conn-bottom:hover { transform: translate(-50%, 50%) scale(1.3); }
+.conn-left { left: 0; top: 50%; }
+.conn-right { right: 0; top: 50%; transform: translate(50%, -50%); }
+.conn-right:hover { transform: translate(50%, -50%) scale(1.3); }
+
+.color-palette {
+  display: none; position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+  background: var(--palette-bg); border-radius: 6px; padding: 3px; box-shadow: 0 2px 10px var(--palette-shadow);
+  gap: 3px; z-index: 10; flex-direction: row;
+}
+.card:hover .color-palette { display: flex; }
+.color-swatch {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+}
+.color-swatch:hover { border-color: var(--text-muted); }
+
+/* Dark mode card text */
+html.dark .card { color: #e8e8e8; }
+html.dark .card-body code { background: rgba(255,255,255,0.12); }
+html.dark .card-delete { color: rgba(255,255,255,0.35); }
+html.dark .card-body .md-src { color: rgba(255,255,255,0.3); }
+
+/* Toolbar */
+#toolbar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100;
+  background: var(--toolbar-bg); border-radius: 10px; padding: 6px 10px; box-shadow: 0 2px 12px var(--toolbar-shadow);
+  display: flex; gap: 6px; align-items: center;
+}
+#toolbar button {
+  background: none; border: 1px solid var(--toolbar-border); border-radius: 6px; padding: 6px 14px;
+  font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text); transition: background 0.1s;
+}
+#toolbar button:hover { background: var(--toolbar-hover); }
+#toolbar .sep { width: 1px; height: 20px; background: var(--toolbar-border); }
+#toolbar-colors { display: flex; gap: 3px; align-items: center; }
+#toolbar-colors .tb-swatch {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.12); cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
+#toolbar-colors .tb-swatch:hover { border-color: var(--text-muted); transform: scale(1.15); }
+#toolbar-colors .tb-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--toolbar-bg), 0 0 0 3px var(--text); }
+#theme-toggle {
+  background: none !important; border: 1px solid var(--toolbar-border) !important;
+  border-radius: 6px !important; padding: 4px 8px !important; font-size: 15px !important;
+  cursor: pointer; line-height: 1; color: var(--text);
+}
+#theme-toggle:hover { background: var(--toolbar-hover) !important; }
+#toolbar .sync-status { font-size: 11px; color: var(--text-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#toolbar .sync-status.active { color: var(--sync-active); }
+
+#zoom-display {
+  font-size: 11px; color: var(--text-muted); min-width: 36px; text-align: center; user-select: none;
+}
+
+#hint {
+  position: fixed; bottom: 14px; right: 18px; z-index: 100;
+  font-size: 11px; color: var(--hint-color); line-height: 1.5; text-align: right;
+  pointer-events: none; user-select: none;
+}
+
+#temp-line { pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button onclick="syncToFile()">Sync to File</button>
+  <button onclick="mergeFile()">Merge</button>
+  <div class="sep"></div>
+  <div id="toolbar-colors"></div>
+  <div class="sep"></div>
+  <button id="theme-toggle" onclick="toggleTheme()"></button>
+  <span id="zoom-display">100%</span>
+  <span class="sync-status" id="sync-status"></span>
+</div>
+<div id="canvas-viewport">
+  <div id="canvas">
+    <svg id="svg-layer"></svg>
+  </div>
+</div>
+<div id="hint">double-click to add card<br>click card to edit, drag to move<br>scroll to pan, pinch/ctrl+scroll to zoom</div>
+
+<script>
+// --- Theme (initialized later, after color swatches exist) ---
+let themeInitialized = false;
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('theme-toggle').textContent = dark ? '\u2600' : '\u263E';
+  if (themeInitialized) updateColorsForTheme();
+}
+function toggleTheme() {
+  const isDark = document.documentElement.classList.contains('dark');
+  applyTheme(!isDark);
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+// Set the class immediately so getColorHex works during swatch creation
+(function() {
+  const saved = localStorage.getItem('theme');
+  const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('theme-toggle').textContent = dark ? '\u2600' : '\u263E';
+})();
+
+// --- State ---
+let state = { cards: [], connections: [] };
+let fileHandle = null;
+let saveTimer = null;
+
+// Light hex + dark hex for each color.
+// Dark variants: same hue, saturation boosted, lightness ~22-28%
+const COLORS = [
+  { name: 'Cream',    hex: '#FFF8E7', dark: '#3D3526' },  // warm tan
+  { name: 'Peach',    hex: '#FFE8D6', dark: '#3E2D22' },  // deep peach brown
+  { name: 'Coral',    hex: '#FFD6CC', dark: '#3E2424' },  // dark coral
+  { name: 'Butter',   hex: '#FFF3C4', dark: '#3A3420' },  // dark gold
+  { name: 'Mint',     hex: '#D8F0E0', dark: '#1E3328' },  // dark mint
+  { name: 'Sage',     hex: '#E0E8D0', dark: '#2A3122' },  // dark olive
+  { name: 'Sky',      hex: '#DBEAFE', dark: '#1E2A3E' },  // dark navy blue
+  { name: 'Lavender', hex: '#E8DFEF', dark: '#2D2535' },  // dark purple
+];
+
+function isDark() { return document.documentElement.classList.contains('dark'); }
+function getColorHex(col) { return isDark() ? col.dark : col.hex; }
+
+let activeColorIndex = 0;
+
+const viewport = document.getElementById('canvas-viewport');
+const canvas = document.getElementById('canvas');
+const svgLayer = document.getElementById('svg-layer');
+const syncStatusEl = document.getElementById('sync-status');
+const zoomDisplay = document.getElementById('zoom-display');
+
+function getActiveColor() { return getColorHex(COLORS[activeColorIndex]); }
+
+// --- Toolbar color picker ---
+const toolbarColors = document.getElementById('toolbar-colors');
+const tbSwatches = [];
+COLORS.forEach((col, i) => {
+  const sw = document.createElement('div');
+  sw.className = 'tb-swatch' + (i === 0 ? ' active' : '');
+  sw.style.background = getColorHex(col);
+  sw.title = col.name;
+  sw.onclick = () => {
+    toolbarColors.querySelector('.active')?.classList.remove('active');
+    sw.classList.add('active');
+    activeColorIndex = i;
+  };
+  toolbarColors.appendChild(sw);
+  tbSwatches.push(sw);
+});
+
+themeInitialized = true;
+
+// Update all swatch visuals + card backgrounds when theme changes
+function updateColorsForTheme() {
+  tbSwatches.forEach((sw, i) => { sw.style.background = getColorHex(COLORS[i]); });
+  // Update existing cards to use the correct color variant
+  state.cards.forEach(c => {
+    // Find which color this card uses and switch to the right variant
+    const match = COLORS.find(col => col.hex === c.color || col.dark === c.color);
+    if (match) {
+      c.color = getColorHex(match);
+      const el = document.getElementById(c.id);
+      if (el) el.style.background = c.color;
+    }
+  });
+  // Update per-card palette swatches
+  document.querySelectorAll('.color-palette').forEach(palette => {
+    palette.querySelectorAll('.color-swatch').forEach((sw, i) => {
+      if (COLORS[i]) sw.style.background = getColorHex(COLORS[i]);
+    });
+  });
+}
+
+// --- Infinite Canvas: pan & zoom state ---
+let camX = 0, camY = 0, zoom = 1;
+const MIN_ZOOM = 0.1, MAX_ZOOM = 5;
+
+function updateTransform() {
+  canvas.style.transform = `translate(${-camX * zoom}px, ${-camY * zoom}px) scale(${zoom})`;
+  // Update dot grid on viewport to match zoom
+  const gs = 24 * zoom;
+  viewport.style.backgroundSize = `${gs}px ${gs}px`;
+  viewport.style.backgroundPosition = `${-camX * zoom}px ${-camY * zoom}px`;
+  zoomDisplay.textContent = Math.round(zoom * 100) + '%';
+}
+
+// Convert screen coords to canvas (world) coords
+function screenToWorld(sx, sy) {
+  return { x: sx / zoom + camX, y: sy / zoom + camY };
+}
+
+// --- Markdown ---
+// Renders markdown to HTML. When editing=true, syntax markers (# ** * ` etc) are
+// wrapped in <span class="md-src"> so they appear faded but remain in the text.
+function renderMarkdown(src, editing) {
+  if (!src) return editing ? '<br>' : '<p style="color:var(--text-muted)">Click to edit</p>';
+  return src.split('\n\n').map(block => {
+    block = block.trim();
+    if (!block) return editing ? '<br>' : '';
+    // Headings
+    const hm = block.match(/^(#{1,3}) /);
+    if (hm) {
+      const lvl = hm[1].length;
+      const tag = 'h' + lvl;
+      const rest = block.slice(hm[0].length);
+      const prefix = editing ? '<span class="md-src">' + esc(hm[0]) + '</span>' : '';
+      const content = inlineRender(rest, editing) || (editing ? '\u200B' : '');
+      return `<${tag}>${prefix}${content}</${tag}>`;
+    }
+    // Bullet lists
+    let lines = block.split('\n');
+    if (lines.every(l => /^\s*[-*] /.test(l))) {
+      return '<ul>' + lines.map(l => {
+        const m = l.match(/^(\s*[-*] )/);
+        const prefix = editing && m ? '<span class="md-src">' + esc(m[1]) + '</span>' : '';
+        const liContent = inlineRender(l.replace(/^\s*[-*] /, ''), editing) || (editing ? '\u200B' : '');
+        return '<li>' + prefix + liContent + '</li>';
+      }).join('') + '</ul>';
+    }
+    // Paragraph
+    return '<p>' + lines.map(l => inlineRender(l, editing)).join('<br>') + '</p>';
+  }).join(editing ? '<br>' : '\n');
+}
+
+function inlineRender(s, editing) {
+  s = esc(s);
+  if (editing) {
+    // Show syntax markers faded, content styled.
+    // Use placeholder chars for * inside replaced HTML to prevent italic regex
+    // from re-matching bold's asterisks.
+    s = s.replace(/`([^`]+)`/g, '<span class="md-src">`</span><code>$1</code><span class="md-src">`</span>');
+    s = s.replace(/\*\*(.+?)\*\*/g, '<span class="md-src">\u2736\u2736</span><strong>$1</strong><span class="md-src">\u2736\u2736</span>');
+    s = s.replace(/\*(.+?)\*/g, '<span class="md-src">*</span><em>$1</em><span class="md-src">*</span>');
+    // Restore bold markers
+    s = s.replace(/\u2736\u2736/g, '**');
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span class="md-src">[</span><a href="$2" target="_blank">$1</a><span class="md-src">]($2)</span>');
+  } else {
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  }
+  return s;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// --- Cursor helpers for contenteditable ---
+// Get cursor offset as character position in the element's text content
+function getCursorOffset(el) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return 0;
+  const range = sel.getRangeAt(0);
+  const pre = document.createRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(range.startContainer, range.startOffset);
+  return pre.toString().length;
+}
+
+// Restore cursor to character offset in element's text content
+function setCursorOffset(el, offset) {
+  const sel = window.getSelection();
+  const range = document.createRange();
+  let found = false;
+
+  function walk(node) {
+    if (found) return;
+    if (node.nodeType === 3) { // text node
+      if (offset <= node.length) {
+        range.setStart(node, offset);
+        range.collapse(true);
+        found = true;
+      } else {
+        offset -= node.length;
+      }
+    } else {
+      for (const child of node.childNodes) {
+        walk(child);
+        if (found) return;
+      }
+    }
+  }
+  walk(el);
+  if (!found) {
+    // Put cursor at end
+    range.selectNodeContents(el);
+    range.collapse(false);
+  }
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+// Extract plain text from contenteditable, converting block elements to proper newlines
+function getPlainText(el) {
+  let text = '';
+  function walk(node, isFirst) {
+    if (node.nodeType === 3) {
+      text += node.textContent;
+    } else if (node.nodeType === 1) {
+      const tag = node.tagName;
+      const isBlock = /^(P|H[1-6]|LI|UL|OL|DIV|BR)$/.test(tag);
+      // Add newlines before block elements (except first)
+      if (isBlock && text.length > 0 && !text.endsWith('\n')) {
+        if (tag === 'BR') { text += '\n'; return; }
+        // Double newline for paragraph/heading separation, single for list items
+        if (/^(P|H[1-6])$/.test(tag)) text += '\n\n';
+        else if (tag === 'LI' && !isFirst) text += '\n';
+      }
+      let first = true;
+      for (const child of node.childNodes) {
+        walk(child, first);
+        first = false;
+      }
+    }
+  }
+  let first = true;
+  for (const child of el.childNodes) {
+    walk(child, first);
+    first = false;
+  }
+  // Clean up: strip zero-width spaces, collapse 3+ newlines to 2
+  return text.replace(/\u200B/g, '').replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
+}
+
+function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+// --- Rendering ---
+function renderAll() {
+  canvas.querySelectorAll('.card').forEach(el => el.remove());
+  state.cards.forEach(c => renderCard(c));
+  renderConnections();
+}
+
+function renderCard(c) {
+  let existing = document.getElementById(c.id);
+  if (existing) existing.remove();
+
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.id = c.id;
+  el.style.cssText = `left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;background:${c.color};`;
+
+  // Color palette
+  const palette = document.createElement('div');
+  palette.className = 'color-palette';
+  COLORS.forEach(col => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch';
+    sw.style.background = getColorHex(col);
+    sw.title = col.name;
+    sw.onclick = (e) => { e.stopPropagation(); c.color = getColorHex(col); el.style.background = c.color; scheduleSave(); };
+    palette.appendChild(sw);
+  });
+  el.appendChild(palette);
+
+  // Delete button
+  const del = document.createElement('button');
+  del.className = 'card-delete';
+  del.textContent = '\u2715';
+  del.onclick = (e) => { e.stopPropagation(); deleteCard(c.id); };
+  el.appendChild(del);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  body.innerHTML = renderMarkdown(c.content, false);
+  el.appendChild(body);
+
+  // Resize handle
+  const rh = document.createElement('div');
+  rh.className = 'resize-handle';
+  rh.onmousedown = (e) => startResize(e, c, el);
+  el.appendChild(rh);
+
+  // Connection handles
+  ['top','bottom','left','right'].forEach(side => {
+    const h = document.createElement('div');
+    h.className = `conn-handle conn-${side}`;
+    h.onmousedown = (e) => { e.stopPropagation(); startConnection(e, c.id, side); };
+    el.appendChild(h);
+  });
+
+  // Unified: mousedown anywhere on card. If you move > threshold = drag. If you release in place on body = edit.
+  const DRAG_THRESHOLD = 4;
+  el.onmousedown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.card-delete, .color-swatch, .conn-handle, .resize-handle')) return;
+    // If already editing, clicking body refocuses the hidden textarea (handled by startEditing)
+    if (el.classList.contains('editing') && e.target.closest('.card-body')) return;
+    e.preventDefault();
+    const startX = e.clientX, startY = e.clientY;
+    const clickedBody = !!e.target.closest('.card-body');
+    let dragging = false;
+
+    const startWorld = screenToWorld(startX, startY);
+    const offX = startWorld.x - c.x;
+    const offY = startWorld.y - c.y;
+
+    function onMove(e) {
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!dragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+        dragging = true;
+        el.style.zIndex = 2;
+        el.classList.add('dragging');
+      }
+      if (dragging) {
+        const w = screenToWorld(e.clientX, e.clientY);
+        c.x = w.x - offX;
+        c.y = w.y - offY;
+        el.style.left = c.x + 'px';
+        el.style.top = c.y + 'px';
+        renderConnections();
+      }
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (dragging) {
+        el.style.zIndex = 1;
+        el.classList.remove('dragging');
+        scheduleSave();
+      } else if (clickedBody) {
+        startEditing(c, el);
+      }
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
+  canvas.appendChild(el);
+}
+
+function startEditing(c, cardEl) {
+  const body = cardEl.querySelector('.card-body');
+  if (cardEl.querySelector('.card-textarea')) return;
+
+  let raw = c.content;
+
+  // Hidden textarea receives all keyboard input; rendered body shows live preview.
+  // The textarea is positioned off-screen but stays focused.
+  const ta = document.createElement('textarea');
+  ta.className = 'card-textarea';
+  ta.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;opacity:0;';
+  ta.value = raw;
+  cardEl.appendChild(ta);
+  ta.focus();
+  ta.setSelectionRange(raw.length, raw.length);
+  cardEl.classList.add('editing');
+
+  function renderWithCursor() {
+    body.innerHTML = renderMarkdown(raw, true) || '<br>';
+    // Walk text nodes to insert cursor span at the right character offset
+    const pos = ta.selectionStart;
+    let remaining = pos;
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+
+    function walk(node) {
+      if (node.nodeType === 3) { // text node
+        // Skip zero-width spaces in counting
+        const text = node.textContent;
+        let realLen = 0;
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] !== '\u200B') realLen++;
+        }
+        if (remaining <= realLen) {
+          // Find the actual character index accounting for zero-width spaces
+          let charIdx = 0;
+          for (let i = 0; i < text.length && charIdx < remaining; i++) {
+            if (text[i] !== '\u200B') charIdx++;
+            if (charIdx === remaining) { charIdx = i + 1; break; }
+            if (i === text.length - 1 && charIdx < remaining) charIdx = text.length;
+          }
+          if (remaining === 0) charIdx = 0;
+          // Split text node and insert cursor
+          const after = node.splitText(charIdx);
+          node.parentNode.insertBefore(cursor, after);
+          return true;
+        }
+        remaining -= realLen;
+      } else if (node.nodeType === 1) {
+        // Skip md-src spans in character counting (they contain syntax markers not in raw text)
+        if (node.classList && node.classList.contains('md-src')) return false;
+        for (const child of Array.from(node.childNodes)) {
+          if (walk(child)) return true;
+        }
+      }
+      return false;
+    }
+
+    for (const child of Array.from(body.childNodes)) {
+      if (walk(child)) break;
+    }
+    // If cursor wasn't placed (e.g. at very end), append it
+    if (!cursor.parentNode) {
+      const last = body.lastChild;
+      if (last) last.appendChild ? last.appendChild(cursor) : body.appendChild(cursor);
+      else body.appendChild(cursor);
+    }
+  }
+
+  renderWithCursor();
+
+  // Clicking the body re-focuses the hidden textarea
+  function refocus(e) {
+    if (!cardEl.classList.contains('editing')) return;
+    e.preventDefault();
+    ta.focus();
+  }
+  body.addEventListener('mousedown', refocus);
+
+  function onInput() {
+    raw = ta.value;
+    c.content = raw;
+    renderWithCursor();
+  }
+
+  ta.addEventListener('input', onInput);
+
+  // Update cursor position on arrow keys, click-refocus, etc.
+  function onSelectionChange() {
+    if (!cardEl.classList.contains('editing')) return;
+    renderWithCursor();
+  }
+  ta.addEventListener('keyup', onSelectionChange);
+  ta.addEventListener('mouseup', onSelectionChange);
+
+  ta.addEventListener('keydown', function onKey(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      ta.blur();
+    }
+  });
+
+  function finish() {
+    ta.removeEventListener('input', onInput);
+    ta.removeEventListener('keyup', onSelectionChange);
+    ta.removeEventListener('mouseup', onSelectionChange);
+    body.removeEventListener('mousedown', refocus);
+    c.content = raw;
+    body.innerHTML = renderMarkdown(c.content, false);
+    cardEl.classList.remove('editing');
+    ta.remove();
+    scheduleSave();
+  }
+
+  ta.addEventListener('blur', finish, { once: true });
+}
+
+// --- Resize ---
+function startResize(e, c, el) {
+  e.preventDefault(); e.stopPropagation();
+  const startW = c.w, startH = c.h;
+  const startSX = e.clientX, startSY = e.clientY;
+
+  function onMove(e) {
+    c.w = Math.max(160, startW + (e.clientX - startSX) / zoom);
+    c.h = Math.max(80, startH + (e.clientY - startSY) / zoom);
+    el.style.width = c.w + 'px';
+    el.style.height = c.h + 'px';
+    renderConnections();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    scheduleSave();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+// --- Connections ---
+let tempLine = null;
+let connFrom = null;
+
+function startConnection(e, cardId, side) {
+  e.preventDefault();
+  connFrom = { id: cardId, side };
+  const pt = getEdgePoint(cardId, side);
+  tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  tempLine.id = 'temp-line';
+  tempLine.setAttribute('x1', pt.x); tempLine.setAttribute('y1', pt.y);
+  tempLine.setAttribute('x2', pt.x); tempLine.setAttribute('y2', pt.y);
+  tempLine.setAttribute('stroke', '#999'); tempLine.setAttribute('stroke-width', '2');
+  tempLine.setAttribute('stroke-dasharray', '6,3');
+  svgLayer.appendChild(tempLine);
+
+  function onMove(e) {
+    const w = screenToWorld(e.clientX, e.clientY);
+    tempLine.setAttribute('x2', w.x); tempLine.setAttribute('y2', w.y);
+  }
+  function onUp(e) {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if (tempLine) { tempLine.remove(); tempLine = null; }
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const targetCard = target?.closest('.card');
+    if (targetCard && targetCard.id !== cardId) {
+      const exists = state.connections.some(cn =>
+        (cn.from === cardId && cn.to === targetCard.id) ||
+        (cn.from === targetCard.id && cn.to === cardId)
+      );
+      if (!exists) {
+        state.connections.push({ from: cardId, to: targetCard.id, label: '' });
+        renderConnections();
+        scheduleSave();
+      }
+    }
+    connFrom = null;
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function getEdgePoint(cardId, side) {
+  const c = state.cards.find(c => c.id === cardId);
+  if (!c) return { x: 0, y: 0 };
+  switch (side) {
+    case 'top':    return { x: c.x + c.w / 2, y: c.y };
+    case 'bottom': return { x: c.x + c.w / 2, y: c.y + c.h };
+    case 'left':   return { x: c.x, y: c.y + c.h / 2 };
+    case 'right':  return { x: c.x + c.w, y: c.y + c.h / 2 };
+  }
+}
+
+function closestEdge(fromCard, toCard) {
+  let fromPt, toPt, best = Infinity;
+  ['top','bottom','left','right'].forEach(fs => {
+    ['top','bottom','left','right'].forEach(ts => {
+      const fp = getEdgePoint(fromCard.id, fs);
+      const tp = getEdgePoint(toCard.id, ts);
+      const d = Math.hypot(fp.x - tp.x, fp.y - tp.y);
+      if (d < best) { best = d; fromPt = fp; toPt = tp; }
+    });
+  });
+  return { fromPt, toPt };
+}
+
+function renderConnections() {
+  svgLayer.innerHTML = '';
+  state.connections.forEach((conn, i) => {
+    const fromCard = state.cards.find(c => c.id === conn.from);
+    const toCard = state.cards.find(c => c.id === conn.to);
+    if (!fromCard || !toCard) return;
+    const { fromPt, toPt } = closestEdge(fromCard, toCard);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fromPt.x); line.setAttribute('y1', fromPt.y);
+    line.setAttribute('x2', toPt.x); line.setAttribute('y2', toPt.y);
+    line.setAttribute('stroke', 'var(--conn-line)'); line.setAttribute('stroke-width', '2');
+    line.style.pointerEvents = 'stroke';
+    line.style.cursor = 'pointer';
+    line.onclick = () => {
+      state.connections.splice(i, 1);
+      renderConnections();
+      scheduleSave();
+    };
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    hit.setAttribute('x1', fromPt.x); hit.setAttribute('y1', fromPt.y);
+    hit.setAttribute('x2', toPt.x); hit.setAttribute('y2', toPt.y);
+    hit.setAttribute('stroke', 'transparent'); hit.setAttribute('stroke-width', '12');
+    hit.style.pointerEvents = 'stroke';
+    hit.style.cursor = 'pointer';
+    hit.onclick = line.onclick;
+    svgLayer.appendChild(hit);
+    svgLayer.appendChild(line);
+  });
+}
+
+// --- Card CRUD ---
+function addCard(x, y) {
+  const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
+  const c = {
+    id: uid(),
+    x: x ?? center.x - 160,
+    y: y ?? center.y - 100,
+    w: 320, h: 200,
+    color: getActiveColor(),
+    content: ''
+  };
+  state.cards.push(c);
+  renderCard(c);
+  scheduleSave();
+}
+
+function deleteCard(id) {
+  state.cards = state.cards.filter(c => c.id !== id);
+  state.connections = state.connections.filter(cn => cn.from !== id && cn.to !== id);
+  document.getElementById(id)?.remove();
+  renderConnections();
+  scheduleSave();
+}
+
+// --- Pan & Zoom ---
+let isPanning = false, panStartX = 0, panStartY = 0, camStartX = 0, camStartY = 0, spaceHeld = false;
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !e.target.matches('textarea,input')) {
+    spaceHeld = true; viewport.classList.add('panning'); e.preventDefault();
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') { spaceHeld = false; isPanning = false; viewport.classList.remove('panning'); }
+});
+
+viewport.addEventListener('mousedown', (e) => {
+  // Space+drag or middle-click to pan
+  if (spaceHeld || e.button === 1) {
+    isPanning = true;
+    panStartX = e.clientX; panStartY = e.clientY;
+    camStartX = camX; camStartY = camY;
+    e.preventDefault();
+  }
+});
+document.addEventListener('mousemove', (e) => {
+  if (isPanning) {
+    camX = camStartX - (e.clientX - panStartX) / zoom;
+    camY = camStartY - (e.clientY - panStartY) / zoom;
+    updateTransform();
+  }
+});
+document.addEventListener('mouseup', (e) => {
+  if (isPanning && (e.button === 0 || e.button === 1)) isPanning = false;
+});
+
+// Wheel: scroll to pan, ctrl/cmd+scroll or pinch to zoom
+viewport.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  if (e.ctrlKey || e.metaKey) {
+    // Zoom toward cursor
+    const oldZoom = zoom;
+    const delta = -e.deltaY * 0.005;
+    zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * Math.exp(delta)));
+    // Adjust camera so the point under cursor stays fixed
+    const wx = e.clientX / oldZoom + camX;
+    const wy = e.clientY / oldZoom + camY;
+    camX = wx - e.clientX / zoom;
+    camY = wy - e.clientY / zoom;
+    updateTransform();
+  } else {
+    // Pan
+    camX += e.deltaX / zoom;
+    camY += e.deltaY / zoom;
+    updateTransform();
+  }
+}, { passive: false });
+
+// Double-click empty space to create card
+viewport.addEventListener('dblclick', (e) => {
+  // Only create card if click didn't land on an existing card or toolbar
+  if (e.target.closest('.card, #toolbar')) return;
+  const w = screenToWorld(e.clientX, e.clientY);
+  addCard(w.x - 160, w.y - 100);
+});
+
+// --- File System Access API ---
+function updateSyncStatus() {
+  if (fileHandle) {
+    syncStatusEl.textContent = fileHandle.name;
+    syncStatusEl.classList.add('active');
+  } else {
+    syncStatusEl.textContent = '';
+    syncStatusEl.classList.remove('active');
+  }
+}
+
+async function syncToFile() {
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: 'canvas.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    if (text.trim()) {
+      try {
+        state = JSON.parse(text);
+        if (!state.cards) state.cards = [];
+        if (!state.connections) state.connections = [];
+        renderAll();
+      } catch (e) { /* not valid JSON, start fresh */ }
+    }
+    updateSyncStatus();
+    await writeToFile();
+  } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+}
+
+async function writeToFile() {
+  if (!fileHandle) return;
+  try {
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(state, null, 2));
+    await writable.close();
+  } catch (e) { console.error('Save failed:', e); }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => writeToFile(), 500);
+}
+
+async function mergeFile() {
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    const file = await handle.getFile();
+    const text = await file.text();
+    const other = JSON.parse(text);
+    if (!other.cards) return;
+
+    let maxRight = 0;
+    state.cards.forEach(c => { maxRight = Math.max(maxRight, c.x + c.w); });
+    const offset = maxRight + 80;
+
+    const idMap = {};
+    other.cards.forEach(c => {
+      const newId = uid();
+      idMap[c.id] = newId;
+      c.id = newId;
+      c.x += offset;
+      state.cards.push(c);
+    });
+    if (other.connections) {
+      other.connections.forEach(cn => {
+        cn.from = idMap[cn.from] || cn.from;
+        cn.to = idMap[cn.to] || cn.to;
+        state.connections.push(cn);
+      });
+    }
+    renderAll();
+    scheduleSave();
+  } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+}
+
+// --- Init ---
+updateTransform();
+</script>
+</body>
+</html>
