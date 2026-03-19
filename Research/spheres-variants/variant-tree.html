@@ -1,17 +1,23 @@
+<meta charset="UTF-8">
 <!-- Spheres & Specific Businesses — Visual Tree Map -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
   .tree-section {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: linear-gradient(135deg, #fefcfb 0%, #fdf6f0 50%, #fef9f4 100%);
-    padding: 4rem 2rem;
+    background: linear-gradient(160deg, #fefcfb 0%, #fdf6f0 40%, #fef5ec 100%);
+    padding: 3.5rem 2rem 4rem;
     overflow-x: auto;
   }
 
   .tree-section * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
 
-  /* Tree structure */
+  /* ─── Tree layout ─── */
   .tree {
     display: flex;
     flex-direction: column;
@@ -20,15 +26,22 @@
   }
 
   .tree ul {
-    padding-top: 1.5rem;
-    position: relative;
-    transition: all 0.3s;
     display: flex;
     justify-content: center;
-    gap: 0;
     list-style: none;
-    margin: 0;
-    padding-left: 0;
+    padding-top: 2rem;
+    position: relative;
+  }
+
+  /* Vertical stem from parent connector down to horizontal rail */
+  .tree ul::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 2rem;
+    border-left: 2px solid #cfaa8a;
   }
 
   .tree li {
@@ -36,143 +49,103 @@
     flex-direction: column;
     align-items: center;
     position: relative;
-    padding: 1.5rem 0.5rem 0;
+    padding: 2rem 0.6rem 0;
   }
 
-  /* Vertical line from parent down */
-  .tree ul::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    border-left: 2px solid #e0b8a0;
-    height: 1.5rem;
-  }
-
-  /* Horizontal line across siblings */
-  .tree li::before,
-  .tree li::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    width: 50%;
-    height: 1.5rem;
-    border-top: 2px solid #e0b8a0;
-  }
-
+  /* Horizontal rail + vertical drop into each node */
   .tree li::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
     right: 50%;
-  }
-
-  .tree li::after {
-    left: 50%;
-  }
-
-  /* Remove left line from first child */
-  .tree li:first-child::before {
-    border-top: none;
-  }
-
-  /* Remove right line from last child */
-  .tree li:last-child::after {
-    border-top: none;
-  }
-
-  /* Only child — no horizontal lines */
-  .tree li:only-child::before,
-  .tree li:only-child::after {
-    border-top: none;
-  }
-
-  /* Vertical line down to node */
-  .tree li::before {
-    border-left: 2px solid #e0b8a0;
-  }
-
-  .tree li:first-child::before {
+    height: 2rem;
+    border-top: 2px solid #cfaa8a;
     border-left: none;
   }
 
-  .tree li:last-child::after {
-    border-left: 2px solid #e0b8a0;
-  }
-
-  /* Connector line from node down to children */
-  .tree li > .node-wrapper {
-    position: relative;
-  }
-
-  .tree li > .node-wrapper::after {
+  .tree li::after {
     content: '';
     position: absolute;
-    bottom: -1.5rem;
+    top: 0;
     left: 50%;
-    border-left: 2px solid #e0b8a0;
-    height: 1.5rem;
+    right: 0;
+    height: 2rem;
+    border-top: 2px solid #cfaa8a;
   }
 
-  /* No connector if no children */
-  .tree li:not(:has(> ul)) > .node-wrapper::after {
-    display: none;
+  /* Vertical drop line into each node */
+  .tree li .node-wrap::before {
+    content: '';
+    position: absolute;
+    top: -2rem;
+    left: 50%;
+    width: 0;
+    height: 2rem;
+    border-left: 2px solid #cfaa8a;
   }
 
-  /* Node styles */
+  /* First child: no rail extending left */
+  .tree li:first-child::before { border-top: none; }
+  /* Last child: no rail extending right */
+  .tree li:last-child::after { border-top: none; }
+  /* Only child: no rail at all */
+  .tree li:only-child::before,
+  .tree li:only-child::after { border-top: none; }
+
+  /* Stem from node down to its children */
+  .node-wrap {
+    position: relative;
+  }
+
+  .tree li:has(> ul) > .node-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2rem;
+    border-left: 2px solid #cfaa8a;
+    transform: translateY(100%);
+  }
+
+  /* ─── Node styles ─── */
   .node {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.55rem 1.1rem;
+    border-radius: 10px;
     border: 2px solid #d4a574;
-    background: white;
-    color: #5a3825;
-    font-size: 0.85rem;
+    background: #fff;
+    color: #5a3e2b;
+    font-size: 0.82rem;
     font-weight: 500;
     white-space: nowrap;
-    position: relative;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(180, 120, 60, 0.08);
+    box-shadow: 0 1px 4px rgba(160, 100, 40, 0.07);
     cursor: default;
   }
 
   .node:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(180, 120, 60, 0.15);
+    box-shadow: 0 6px 16px rgba(160, 100, 40, 0.13);
   }
 
-  /* Focus area nodes (pin markers) */
-  .node.focus {
-    background: linear-gradient(135deg, #c2410c, #ea580c);
-    color: white;
-    border-color: #c2410c;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(194, 65, 12, 0.25);
-  }
-
-  .node.focus:hover {
-    box-shadow: 0 4px 16px rgba(194, 65, 12, 0.35);
-  }
-
-  .node.focus .pin {
-    margin-right: 0.3rem;
-  }
-
-  /* Root node */
+  /* Root */
   .node.root {
     background: linear-gradient(135deg, #7c2d12, #9a3412);
-    color: white;
+    color: #fff;
     border-color: #7c2d12;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 700;
-    padding: 0.75rem 1.75rem;
-    border-radius: 16px;
-    letter-spacing: 0.02em;
-    box-shadow: 0 4px 12px rgba(124, 45, 18, 0.3);
+    padding: 0.8rem 2rem;
+    border-radius: 14px;
+    letter-spacing: 0.015em;
+    box-shadow: 0 4px 14px rgba(124, 45, 18, 0.3);
   }
 
-  .node.root:hover {
-    box-shadow: 0 6px 20px rgba(124, 45, 18, 0.4);
-  }
-
-  /* Category / branch nodes */
+  /* Branch / category */
   .node.branch {
     background: #fef3e2;
     border-color: #d4a574;
@@ -180,29 +153,45 @@
     color: #7c2d12;
   }
 
-  /* Detail text under nodes */
+  /* Focus area */
+  .node.focus {
+    background: linear-gradient(135deg, #c2410c, #ea580c);
+    color: #fff;
+    border-color: #b93d0b;
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(194, 65, 12, 0.28);
+  }
+
+  .node.focus:hover {
+    box-shadow: 0 6px 20px rgba(194, 65, 12, 0.38);
+  }
+
+  .pin {
+    margin-right: 0.25rem;
+    font-style: normal;
+  }
+
+  /* Detail text */
   .node-detail {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 400;
-    opacity: 0.85;
-    margin-top: 0.15rem;
+    opacity: 0.8;
+    margin-top: 0.2rem;
     white-space: normal;
-    max-width: 180px;
-    line-height: 1.3;
+    max-width: 190px;
+    line-height: 1.35;
     text-align: center;
   }
 
-  .node.focus .node-detail {
-    opacity: 0.9;
-  }
+  .node.focus .node-detail { opacity: 0.9; }
 
-  /* Legend */
+  /* ─── Legend ─── */
   .tree-legend {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.8rem;
     justify-content: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
     flex-wrap: wrap;
   }
 
@@ -210,46 +199,38 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #78716c;
+    font-size: 0.78rem;
+    color: #8a7a6e;
+    font-weight: 500;
   }
 
   .legend-swatch {
-    width: 18px;
-    height: 18px;
-    border-radius: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
     border: 2px solid #d4a574;
-    background: white;
+    background: #fff;
   }
 
-  .legend-swatch.focus {
+  .legend-swatch.is-focus {
     background: linear-gradient(135deg, #c2410c, #ea580c);
-    border-color: #c2410c;
+    border-color: #b93d0b;
   }
 
-  .legend-swatch.branch {
+  .legend-swatch.is-branch {
     background: #fef3e2;
     border-color: #d4a574;
   }
 
-  /* Responsive: scroll horizontally on small screens */
+  /* ─── Scroll container ─── */
   .tree-scroll {
     overflow-x: auto;
     padding-bottom: 2rem;
   }
 
-  .tree-scroll::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .tree-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .tree-scroll::-webkit-scrollbar-thumb {
-    background: #d4a574;
-    border-radius: 3px;
-  }
+  .tree-scroll::-webkit-scrollbar { height: 6px; }
+  .tree-scroll::-webkit-scrollbar-track { background: transparent; }
+  .tree-scroll::-webkit-scrollbar-thumb { background: #d4a574; border-radius: 3px; }
 </style>
 
 <section class="tree-section">
@@ -260,11 +241,11 @@
 
   <div class="tree-legend">
     <div class="legend-item">
-      <div class="legend-swatch focus"></div>
+      <div class="legend-swatch is-focus"></div>
       <span>Focus Area</span>
     </div>
     <div class="legend-item">
-      <div class="legend-swatch branch"></div>
+      <div class="legend-swatch is-branch"></div>
       <span>Category</span>
     </div>
     <div class="legend-item">
@@ -275,57 +256,51 @@
 
   <div class="tree-scroll">
     <div class="tree">
+
       <!-- Root -->
-      <div class="node-wrapper">
+      <div class="node-wrap">
         <div class="node root">Spheres</div>
       </div>
 
-      <!-- Level 1: Top-level branches -->
+      <!-- Level 1 -->
       <ul>
-        <!-- Event Organization -->
+
+        <!-- ── Event Organization ── -->
         <li>
-          <div class="node-wrapper">
-            <div class="node branch">Event Organization</div>
-          </div>
+          <div class="node-wrap"><div class="node branch">Event Organization</div></div>
           <ul>
             <!-- Life Events -->
             <li>
-              <div class="node-wrapper">
-                <div class="node branch">Life Events</div>
-              </div>
+              <div class="node-wrap"><div class="node branch">Life Events</div></div>
               <ul>
-                <!-- Events sub-branch -->
+                <!-- Events -->
                 <li>
-                  <div class="node-wrapper">
-                    <div class="node branch">Events</div>
-                  </div>
+                  <div class="node-wrap"><div class="node branch">Events</div></div>
                   <ul>
                     <li>
-                      <div class="node-wrapper">
+                      <div class="node-wrap">
                         <div class="node focus">
-                          <span class="pin">📍</span> Weddings
-                          <span class="node-detail">Presentation &amp; Process · Individuals · Wedding Planners</span>
+                          <span><span class="pin">&#x1F4CD;</span> Weddings</span>
+                          <span class="node-detail">Presentation &amp; Process &middot; Individuals &middot; Wedding Planners</span>
                         </div>
                       </div>
                     </li>
                     <li>
-                      <div class="node-wrapper">
+                      <div class="node-wrap">
                         <div class="node focus">
-                          <span class="pin">📍</span> Funerals
+                          <span><span class="pin">&#x1F4CD;</span> Funerals</span>
                           <span class="node-detail">Funeral Homes</span>
                         </div>
                       </div>
                     </li>
                     <li>
-                      <div class="node-wrapper">
-                        <div class="node">Baby Showers</div>
-                      </div>
+                      <div class="node-wrap"><div class="node">Baby Showers</div></div>
                     </li>
                     <li>
-                      <div class="node-wrapper">
+                      <div class="node-wrap">
                         <div class="node">
                           Coming of Age
-                          <span class="node-detail">Bar Mitzvahs · Quinceañeras</span>
+                          <span class="node-detail">Bar Mitzvahs &middot; Quincea&#xF1;eras</span>
                         </div>
                       </div>
                     </li>
@@ -333,10 +308,10 @@
                 </li>
                 <!-- Distribution -->
                 <li>
-                  <div class="node-wrapper">
+                  <div class="node-wrap">
                     <div class="node">
                       Distribution
-                      <span class="node-detail">D2C · Service People</span>
+                      <span class="node-detail">D2C &middot; Service People</span>
                     </div>
                   </div>
                 </li>
@@ -344,82 +319,79 @@
             </li>
             <!-- Conferences -->
             <li>
-              <div class="node-wrapper">
-                <div class="node">Conferences</div>
-              </div>
+              <div class="node-wrap"><div class="node">Conferences</div></div>
             </li>
           </ul>
         </li>
 
-        <!-- Real Estate -->
+        <!-- ── Real Estate ── -->
         <li>
-          <div class="node-wrapper">
+          <div class="node-wrap">
             <div class="node focus">
-              <span class="pin">📍</span> Real Estate
-              <span class="node-detail">Agents · Property Listings</span>
+              <span><span class="pin">&#x1F4CD;</span> Real Estate</span>
+              <span class="node-detail">Agents &middot; Property Listings</span>
             </div>
           </div>
         </li>
 
-        <!-- Local Businesses -->
+        <!-- ── Local Businesses ── -->
         <li>
-          <div class="node-wrapper">
+          <div class="node-wrap">
             <div class="node focus">
-              <span class="pin">📍</span> Local Businesses
-              <span class="node-detail">Dentists · Lawyers · Photographers</span>
+              <span><span class="pin">&#x1F4CD;</span> Local Businesses</span>
+              <span class="node-detail">Dentists &middot; Lawyers &middot; Photographers</span>
             </div>
           </div>
         </li>
 
-        <!-- Remote Contractors -->
+        <!-- ── Remote Contractors ── -->
         <li>
-          <div class="node-wrapper">
+          <div class="node-wrap">
             <div class="node focus">
-              <span class="pin">📍</span> Remote Contractors
+              <span><span class="pin">&#x1F4CD;</span> Remote Contractors</span>
             </div>
           </div>
           <ul>
             <li>
-              <div class="node-wrapper">
+              <div class="node-wrap">
                 <div class="node">
                   Who
-                  <span class="node-detail">Coaches · Presentation · Consultants · Agencies · Marketing Teams</span>
+                  <span class="node-detail">Coaches &middot; Presentation &middot; Consultants &middot; Agencies &middot; Marketing Teams</span>
                 </div>
               </div>
             </li>
             <li>
-              <div class="node-wrapper">
+              <div class="node-wrap">
                 <div class="node">
                   What
-                  <span class="node-detail">Pitch Pages · Delivery Portal · Client Deliverables · Micro Sites</span>
+                  <span class="node-detail">Pitch Pages &middot; Delivery Portal &middot; Client Deliverables &middot; Micro Sites</span>
                 </div>
               </div>
             </li>
           </ul>
         </li>
 
-        <!-- Small Businesses -->
+        <!-- ── Small Businesses ── -->
         <li>
-          <div class="node-wrapper">
+          <div class="node-wrap">
             <div class="node">
               Small Businesses / Individual Customers
-              <span class="node-detail">Dentist · Therapist · Lawyer · Restaurants</span>
+              <span class="node-detail">Dentist &middot; Therapist &middot; Lawyer &middot; Restaurants</span>
             </div>
           </div>
         </li>
 
-        <!-- Education -->
+        <!-- ── Education ── -->
         <li>
-          <div class="node-wrapper">
+          <div class="node-wrap">
             <div class="node">
               Education
               <span class="node-detail">Thought Leaders</span>
             </div>
           </div>
         </li>
+
       </ul>
     </div>
   </div>
 </section>
-
-<script src="https://cdn.tailwindcss.com"></script>
