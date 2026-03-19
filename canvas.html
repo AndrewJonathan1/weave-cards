@@ -97,27 +97,45 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 .card-delete:hover { color: var(--delete-hover); }
 .card:hover .card-delete { display: block; }
 .card-body {
-  flex: 1; padding: 10px 12px; overflow-y: auto; font-size: 14px; line-height: 1.55;
+  flex: 1; padding: 10px 12px; overflow-y: auto;
+  font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, "Cascadia Code", Consolas, "Roboto Mono", monospace;
+  font-size: 13px; line-height: 1.6;
   cursor: text; word-wrap: break-word;
 }
-.card-body h1 { font-size: 1.3em; margin: 0.3em 0; }
-.card-body h2 { font-size: 1.15em; margin: 0.25em 0; }
-.card-body h3 { font-size: 1.05em; margin: 0.2em 0; }
-.card-body ul { padding-left: 1.3em; margin: 0.2em 0; }
-.card-body code { background: var(--code-bg); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+.card-body h1, .card-body h2, .card-body h3 { font-size: inherit; font-weight: bold; margin: 0; }
+.card-body ul, .card-body ol { list-style: none; padding: 0; margin: 0; }
+.card-body li { margin: 0; }
+.card-body code { background: var(--code-bg); padding: 1px 3px; border-radius: 3px; font: inherit; }
 .card-body a { color: var(--link); text-decoration: underline; }
-.card-body p { margin: 0.25em 0; }
+.card-body div { min-height: 1.6em; }
+/* Hide syntax markers in display mode (non-editing cards) */
+.card-body .syntax-marker { visibility: hidden; }
+.card-body .syntax-marker.url-part { display: none; }
+/* Show syntax markers when editing */
+.card.editing .card-body .syntax-marker { visibility: visible; }
+.card.editing .card-body .syntax-marker.url-part { display: inline; }
 
-.card-body .md-h {
-  font-size: 0; line-height: 0; overflow: hidden;
-  display: inline; color: transparent; user-select: none; pointer-events: none;
+/* Overtype editor inside card */
+.card-body .overtype-container {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
-.card-body .cursor {
-  display: inline-block; width: 1.5px; height: 1.1em; background: var(--text);
-  vertical-align: text-bottom; margin: 0 -0.5px;
-  animation: blink 1s step-end infinite;
+.card-body .overtype-wrapper {
+  background: transparent !important;
 }
-@keyframes blink { 50% { opacity: 0; } }
+.card-body .overtype-wrapper .overtype-input,
+.card-body .overtype-wrapper .overtype-preview {
+  padding: 0 !important;
+  font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, "Cascadia Code", Consolas, "Roboto Mono", monospace !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+.card-body .overtype-toolbar { display: none !important; }
+.card-body .overtype-stats { display: none !important; }
+
+/* Off-screen parking for shared OverType instance */
+#overtype-parking { position: fixed; left: -9999px; top: -9999px; width: 300px; height: 200px; overflow: hidden; pointer-events: none; }
 .resize-handle {
   position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; cursor: nwse-resize;
 }
@@ -197,6 +215,7 @@ html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
 
 #temp-line { pointer-events: none; }
 </style>
+<script src="overtype.min.js"></script>
 </head>
 <body>
 <div id="toolbar">
@@ -215,6 +234,7 @@ html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
   </div>
 </div>
 <div id="hint">double-click to add card<br>click card to edit, drag to move<br>scroll to pan, pinch/ctrl+scroll to zoom</div>
+<div id="overtype-parking"></div>
 
 <script>
 // --- Theme (initialized later, after color swatches exist) ---
@@ -326,74 +346,22 @@ function screenToWorld(sx, sy) {
   return { x: sx / zoom + camX, y: sy / zoom + camY };
 }
 
-// --- Markdown ---
-// H() wraps consumed syntax characters in a hidden span so the rendered HTML
-// has a 1:1 character mapping with the raw text (needed for cursor placement).
-const H = (t) => '<span class="md-h">' + t + '</span>';
-
-function renderMarkdown(src) {
-  if (!src) return '';
-  // Split on \n\n but preserve them for cursor mapping.
-  // Don't use trim() — trailing newlines are significant.
-  const blocks = src.split('\n\n');
-  return blocks.map((block, i) => {
-    const sep = i > 0 ? H('\n\n') : '';
-    if (!block) return sep + '<p><br></p>';
-    // Headings
-    const hm = block.match(/^(#{1,3}) /);
-    if (hm) {
-      const lvl = hm[1].length;
-      const tag = 'h' + lvl;
-      const rest = block.slice(hm[0].length);
-      return `${sep}<${tag}>${H(esc(hm[0]))}${inlineRender(rest)}</${tag}>`;
-    }
-    // Bullet lists
-    const lines = block.split('\n');
-    if (lines.every(l => /^\s*[-*] /.test(l) || l === '')) {
-      const realLines = lines.filter(l => l !== '');
-      if (realLines.length > 0 && realLines.every(l => /^\s*[-*] /.test(l))) {
-        return sep + '<ul>' + lines.map((l, j) => {
-          const nlSep = j > 0 ? H('\n') : '';
-          if (l === '') return nlSep;
-          const m = l.match(/^(\s*[-*] )/);
-          const prefix = m ? H(esc(m[1])) : '';
-          return nlSep + '<li>' + prefix + inlineRender(l.replace(/^\s*[-*] /, '')) + '</li>';
-        }).join('') + '</ul>';
-      }
-    }
-    // Paragraph (single newlines become visible <br>)
-    return sep + '<p>' + lines.map((l, j) => {
-      const nlSep = j > 0 ? H('\n') + '<br>' : '';
-      return nlSep + inlineRender(l);
-    }).join('') + '</p>';
-  }).join('');
-}
-
-function inlineRender(s) {
-  s = esc(s);
-  s = s.replace(/`([^`]+)`/g, H('`') + '<code>$1</code>' + H('`'));
-  s = s.replace(/\*\*(.+?)\*\*/g, H('\u2736\u2736') + '<strong>$1</strong>' + H('\u2736\u2736'));
-  s = s.replace(/\*(.+?)\*/g, H('*') + '<em>$1</em>' + H('*'));
-  s = s.replace(/\u2736\u2736/g, '**');
-  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, H('[') + '<a href="$2" target="_blank">$1</a>' + H(']($2)'));
-  return s;
-}
-
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// Render markdown for display (no hidden cursor-mapping spans)
+// --- Markdown (display-only renderer using OverType parser) ---
 function renderView(src) {
-  const html = renderMarkdown(src);
-  // Strip md-h spans via regex (they only contain text, never nested HTML)
-  return html.replace(/<span class="md-h">[^<]*<\/span>/g, '');
+  if (!src) return '';
+  return OverType.MarkdownParser.parse(src, -1, false, null, false);
 }
 
 function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
 // --- Rendering ---
 function renderAll() {
+  // Park the shared editor before clearing cards so it doesn't get destroyed
+  if (editingCardId && sharedEditorContainer) {
+    const parking = document.getElementById('overtype-parking');
+    parking.appendChild(sharedEditorContainer);
+    editingCardId = null;
+  }
   canvas.querySelectorAll('.card').forEach(el => el.remove());
   state.cards.forEach(c => renderCard(c));
   renderConnections();
@@ -431,7 +399,7 @@ function renderCard(c) {
   // Body
   const body = document.createElement('div');
   body.className = 'card-body';
-  body.innerHTML = renderView(c.content) || '<p style="color:var(--text-muted)">Click to edit</p>';
+  body.innerHTML = renderView(c.content) || '<span style="color:var(--text-muted)">Click to edit</span>';
   el.appendChild(body);
 
   // Resize handle
@@ -453,7 +421,7 @@ function renderCard(c) {
   el.onmousedown = (e) => {
     if (e.button !== 0) return;
     if (e.target.closest('.card-delete, .color-swatch, .conn-handle, .resize-handle')) return;
-    // If already editing, clicking body refocuses the hidden textarea (handled by startEditing)
+    // If already editing, let Overtype handle all clicks inside the card body
     if (el.classList.contains('editing') && e.target.closest('.card-body')) return;
     e.preventDefault();
     const startX = e.clientX, startY = e.clientY;
@@ -498,138 +466,110 @@ function renderCard(c) {
   canvas.appendChild(el);
 }
 
-function startEditing(c, cardEl) {
-  const body = cardEl.querySelector('.card-body');
-  if (cardEl.querySelector('.card-textarea')) return;
+// --- Shared OverType instance (teleport pattern) ---
+let sharedEditor = null;
+let sharedEditorContainer = null; // the .overtype-container element
+let editingCardId = null;
 
-  let raw = c.content;
-
-  // Hidden textarea receives all keyboard input; rendered body shows live preview.
-  // The textarea is positioned off-screen but stays focused.
-  const ta = document.createElement('textarea');
-  ta.className = 'card-textarea';
-  ta.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;opacity:0;';
-  ta.value = raw;
-  cardEl.appendChild(ta);
-  ta.focus();
-  ta.setSelectionRange(raw.length, raw.length);
-  cardEl.classList.add('editing');
-
-  function renderWithCursor() {
-    body.innerHTML = renderMarkdown(raw) || '<p><br></p>';
-    let remaining = ta.selectionStart;
-    const cursor = document.createElement('span');
-    cursor.className = 'cursor';
-    // When cursor position falls inside a hidden (md-h) span, we set
-    // deferred=true and keep walking until we find a visible spot.
-    let deferred = false;
-
-    function placeCursor(parent, before) {
-      parent.insertBefore(cursor, before || null);
-      deferred = false;
-      return true;
-    }
-
-    function walk(node) {
-      if (node.nodeType === 3) {
-        const inHidden = node.parentNode.classList?.contains('md-h');
-        if (inHidden) {
-          if (remaining <= node.length) {
-            remaining = 0;
-            deferred = true;
-            return false;
-          }
-          remaining -= node.length;
-        } else {
-          if (deferred) return placeCursor(node.parentNode, node);
-          if (remaining <= node.length) {
-            const after = node.splitText(remaining);
-            return placeCursor(node.parentNode, after);
-          }
-          remaining -= node.length;
-        }
-      } else if (node.nodeType === 1) {
-        const tag = node.tagName;
-        const isHidden = node.classList?.contains('md-h');
-        // Skip into hidden spans to count chars, but don't place cursor there
-        if (isHidden) {
-          for (const child of Array.from(node.childNodes)) {
-            walk(child); // just count, ignore return
-          }
-          return false;
-        }
-        // BR: if deferred, place cursor right after the <br>
-        if (tag === 'BR') {
-          if (deferred) return placeCursor(node.parentNode, node.nextSibling);
-          return false;
-        }
-        // For visible block/inline elements: if deferred, place at start
-        if (deferred) {
-          return placeCursor(node, node.firstChild || null);
-        }
-        for (const child of Array.from(node.childNodes)) {
-          if (walk(child)) return true;
-        }
-        // If deferred after exhausting children, place at end of this element
-        if (deferred) return placeCursor(node, null);
+function initSharedEditor() {
+  const parking = document.getElementById('overtype-parking');
+  const dark = isDark();
+  const textColor = dark ? '#e0e0e0' : '#333';
+  const syntaxColor = dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)';
+  const [editor] = new OverType(parking, {
+    value: '',
+    toolbar: false,
+    placeholder: '',
+    theme: {
+      name: 'shared-editor',
+      colors: {
+        bgPrimary: 'transparent',
+        bgSecondary: 'transparent',
+        text: textColor,
+        textPrimary: textColor,
+        textSecondary: syntaxColor,
+        cursor: textColor,
+        selection: dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+        h1: textColor,
+        h2: textColor,
+        h3: textColor,
+        strong: textColor,
+        em: textColor,
+        link: dark ? '#6ea8fe' : '#2563eb',
+        code: textColor,
+        codeBg: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+        syntaxMarker: syntaxColor,
+        border: 'transparent',
       }
-      return false;
-    }
-
-    for (const child of Array.from(body.childNodes)) {
-      if (walk(child)) break;
-    }
-    if (!cursor.parentNode) {
-      (body.lastChild || body).appendChild(cursor);
-    }
-  }
-
-  renderWithCursor();
-
-  // Clicking the body re-focuses the hidden textarea
-  function refocus(e) {
-    if (!cardEl.classList.contains('editing')) return;
-    e.preventDefault();
-    ta.focus();
-  }
-  body.addEventListener('mousedown', refocus);
-
-  function onInput() {
-    raw = ta.value;
-    c.content = raw;
-    renderWithCursor();
-  }
-
-  ta.addEventListener('input', onInput);
-
-  // Update cursor position on arrow keys, click-refocus, etc.
-  function onSelectionChange() {
-    if (!cardEl.classList.contains('editing')) return;
-    renderWithCursor();
-  }
-  ta.addEventListener('keyup', onSelectionChange);
-  ta.addEventListener('mouseup', onSelectionChange);
-
-  ta.addEventListener('keydown', function onKey(e) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      ta.blur();
+    },
+    onChange: (val) => {
+      if (editingCardId) {
+        const c = state.cards.find(card => card.id === editingCardId);
+        if (c) { c.content = val; scheduleSave(); }
+      }
     }
   });
+  sharedEditor = editor;
+  sharedEditorContainer = parking.querySelector('.overtype-container');
+}
 
-  function finish() {
-    ta.removeEventListener('input', onInput);
-    ta.removeEventListener('keyup', onSelectionChange);
-    ta.removeEventListener('mouseup', onSelectionChange);
-    body.removeEventListener('mousedown', refocus);
-    c.content = raw;
-    body.innerHTML = renderView(c.content) || '<p style="color:var(--text-muted)">Click to edit</p>';
-    cardEl.classList.remove('editing');
-    ta.remove();
-    scheduleSave();
+function startEditing(c, cardEl) {
+  if (editingCardId === c.id) return;
+  // If another card is being edited, stop that first
+  if (editingCardId) {
+    const prevCard = state.cards.find(card => card.id === editingCardId);
+    const prevEl = document.getElementById(editingCardId);
+    if (prevCard && prevEl) stopEditing(prevCard, prevEl);
+  }
+  if (!sharedEditor) initSharedEditor();
+
+  const body = cardEl.querySelector('.card-body');
+  cardEl.classList.add('editing');
+  editingCardId = c.id;
+
+  // Teleport: move the OverType container into this card's body
+  body.innerHTML = '';
+  body.appendChild(sharedEditorContainer);
+  sharedEditorContainer.style.pointerEvents = '';
+
+  // Set the value and focus
+  sharedEditor.setValue(c.content);
+  const ta = sharedEditorContainer.querySelector('.overtype-input');
+  if (ta) {
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
   }
 
-  ta.addEventListener('blur', finish, { once: true });
+  // Listen for Escape to stop editing
+  function onKeyDown(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      stopEditing(c, cardEl);
+    }
+  }
+  cardEl.addEventListener('keydown', onKeyDown);
+  cardEl._escHandler = onKeyDown;
+}
+
+function stopEditing(c, cardEl) {
+  if (editingCardId !== c.id) return;
+  // Grab content before teleporting away
+  c.content = sharedEditor.getValue();
+  editingCardId = null;
+
+  // Teleport back to parking
+  const parking = document.getElementById('overtype-parking');
+  parking.appendChild(sharedEditorContainer);
+
+  // Re-render static display
+  const body = cardEl.querySelector('.card-body');
+  body.innerHTML = renderView(c.content) || '<span style="color:var(--text-muted)">Click to edit</span>';
+  cardEl.classList.remove('editing');
+  if (cardEl._escHandler) {
+    cardEl.removeEventListener('keydown', cardEl._escHandler);
+    delete cardEl._escHandler;
+  }
+  scheduleSave();
 }
 
 // --- Resize ---
@@ -764,10 +704,18 @@ function addCard(x, y) {
   };
   state.cards.push(c);
   renderCard(c);
+  const cardEl = document.getElementById(c.id);
+  if (cardEl) startEditing(c, cardEl);
   scheduleSave();
 }
 
 function deleteCard(id) {
+  // If deleting the card being edited, park the editor first
+  if (editingCardId === id) {
+    editingCardId = null;
+    const parking = document.getElementById('overtype-parking');
+    if (sharedEditorContainer) parking.appendChild(sharedEditorContainer);
+  }
   state.cards = state.cards.filter(c => c.id !== id);
   state.connections = state.connections.filter(cn => cn.from !== id && cn.to !== id);
   document.getElementById(id)?.remove();
@@ -828,6 +776,17 @@ viewport.addEventListener('wheel', (e) => {
     updateTransform();
   }
 }, { passive: false });
+
+// Click on empty canvas stops any active editing
+viewport.addEventListener('mousedown', (e) => {
+  if (!e.target.closest('.card') && !e.target.closest('#toolbar')) {
+    if (editingCardId) {
+      const card = state.cards.find(c => c.id === editingCardId);
+      const cardEl = document.getElementById(editingCardId);
+      if (card && cardEl) stopEditing(card, cardEl);
+    }
+  }
+}, true);
 
 // Double-click empty space to create card
 viewport.addEventListener('dblclick', (e) => {
