@@ -197,36 +197,30 @@ html.dark #toolbar-colors .tb-swatch { border-color: rgba(255,255,255,0.15); }
 }
 #theme-toggle:hover { background: var(--toolbar-hover) !important; }
 
-/* Sync button states */
-#sync-btn {
-  position: relative; white-space: nowrap;
-  transition: background 0.25s, border-color 0.25s, color 0.15s;
+/* File status indicator */
+#file-status {
+  display: none; font-size: 12px; white-space: nowrap; align-items: center; gap: 5px;
+  padding: 0 4px; color: var(--text-muted);
+  transition: color 0.2s;
 }
-#sync-btn.synced { border-color: var(--sync-active); }
-#sync-btn .sync-dot {
-  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--sync-active); margin-right: 5px; vertical-align: middle;
-  opacity: 0; transition: opacity 0.2s;
+#file-status.active { display: inline-flex; }
+#file-status .status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--sync-active); flex-shrink: 0;
 }
-#sync-btn.synced .sync-dot { opacity: 1; }
-#sync-btn.saving {
-  background: #f5c542 !important; border-color: #d4a832 !important; color: #5a4a10 !important;
-}
-html.dark #sync-btn.saving {
-  background: #5a4a1a !important; border-color: #7a6a2a !important; color: #f5d56a !important;
-}
-#sync-btn.saved {
-  background: #4a9 !important; border-color: #3a8a6a !important; color: #fff !important;
-}
-html.dark #sync-btn.saved {
-  background: #2a6a4a !important; border-color: #3a8a5a !important; color: #c0f0d0 !important;
-}
-
-/* Merge button — smaller, less prominent */
-#merge-btn {
+#file-status.saving .status-dot { background: #d4a832; }
+#file-status.saving { color: #8a7a30; }
+html.dark #file-status.saving { color: #f5d56a; }
+html.dark #file-status.saving .status-dot { background: #f5d56a; }
+#file-status.saved .status-dot { background: #4a9; }
+#file-status.saved { color: #3a8a6a; }
+html.dark #file-status.saved { color: #c0f0d0; }
+html.dark #file-status.saved .status-dot { background: #5bba9a; }
+/* Import button — smaller, less prominent */
+#import-btn {
   padding: 4px 10px; font-size: 12px; color: var(--text-muted); border-color: transparent;
 }
-#merge-btn:hover { border-color: var(--toolbar-border); color: var(--text); }
+#import-btn:hover { border-color: var(--toolbar-border); color: var(--text); }
 
 #zoom-display {
   font-size: 11px; color: var(--text-muted); min-width: 36px; text-align: center; user-select: none;
@@ -258,12 +252,62 @@ html.dark #sync-btn.saved {
 #help-panel .help-desc { text-align: right; white-space: nowrap; }
 
 #temp-line { pointer-events: none; }
+
+/* README overlay */
+#readme-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 24px;
+}
+#readme-overlay.open { display: flex; }
+#readme-panel {
+  background: var(--bg, #fafaf9); color: var(--text, #1a1a1a);
+  border-radius: 12px; max-width: 720px; width: 100%; max-height: 82vh;
+  overflow-y: auto; padding: 32px 36px 40px; position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.7;
+}
+#readme-panel h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.4rem; letter-spacing: -0.02em; }
+#readme-panel h1 + p { color: var(--text-muted, #6b6b6b); margin-bottom: 1.5rem; }
+#readme-panel h2 { font-size: 1.3rem; font-weight: 700; margin: 2rem 0 0.6rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--toolbar-border, #e5e5e0); }
+#readme-panel h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.4rem; }
+#readme-panel p { margin: 0.5rem 0; }
+#readme-panel ul, #readme-panel ol { margin: 0.4rem 0 0.4rem 1.4rem; }
+#readme-panel li { margin: 0.2rem 0; }
+#readme-panel li ul { margin: 0.15rem 0 0.15rem 1.2rem; }
+#readme-panel code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.85em; background: var(--toolbar-hover, #f0f0eb); padding: 0.15em 0.4em; border-radius: 4px;
+}
+#readme-panel pre {
+  background: var(--toolbar-hover, #f0f0eb); border: 1px solid var(--toolbar-border, #e5e5e0);
+  border-radius: 8px; padding: 0.8rem 1rem; overflow-x: auto; margin: 0.6rem 0; line-height: 1.5;
+}
+#readme-panel pre code { background: none; padding: 0; font-size: 0.8rem; }
+#readme-panel table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.9em; }
+#readme-panel th { text-align: left; font-weight: 600; padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--toolbar-border, #e5e5e0); white-space: nowrap; }
+#readme-panel td { padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--toolbar-border, #e5e5e0); }
+#readme-panel .color-swatch {
+  display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+  vertical-align: middle; margin-right: 4px; border: 1px solid var(--toolbar-border, #e5e5e0);
+}
+#readme-close {
+  position: sticky; top: 0; float: right; margin: -8px -12px 0 0;
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: var(--toolbar-hover, #f0f0eb); color: var(--text-muted, #6b6b6b);
+  font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+}
+#readme-close:hover { background: var(--toolbar-border, #e5e5e0); color: var(--text, #1a1a1a); }
 </style>
 </head>
 <body>
 <div id="toolbar">
-  <button id="sync-btn" onclick="syncToFile()"><span class="sync-dot"></span><span id="sync-label">Sync to File</span></button>
-  <button id="merge-btn" onclick="mergeFile()">Merge</button>
+  <button class="tb-btn" onclick="openFile()">Open</button>
+  <button class="tb-btn" onclick="saveAsFile()">Save As</button>
+  <button id="import-btn" class="tb-btn" onclick="importCards()">Add Cards</button>
+  <span id="file-status"><span class="status-dot"></span><span id="file-label"></span></span>
   <div class="sep"></div>
   <div id="toolbar-colors"></div>
   <div class="sep"></div>
@@ -278,7 +322,12 @@ html.dark #sync-btn.saved {
 </div>
 <button id="help-btn" onclick="document.getElementById('help-panel').classList.toggle('open')">?</button>
 <div id="help-panel">
-  <a href="/readme.html" target="_blank" style="display:block;margin-bottom:10px;font-size:12px;font-weight:600;color:var(--accent, #4a9);text-decoration:none;">README &rarr;</a>
+  <a href="#" onclick="event.preventDefault();document.getElementById('readme-overlay').classList.add('open');document.getElementById('help-panel').classList.remove('open');" style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin:-2px -4px 12px;background:var(--bg, #f5f5f0);border:1px solid var(--toolbar-border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text);text-decoration:none;line-height:1.3;transition:background 0.15s;cursor:pointer;">
+    <span style="font-size:18px;flex-shrink:0;">&#x1F4C4;</span>
+    <span>README<br><span style="font-size:10px;font-weight:400;color:var(--text-muted);">Card Format &amp; LLM Guide</span></span>
+    <span style="margin-left:auto;color:var(--text-muted);font-size:14px;">&rarr;</span>
+  </a>
+  <hr style="border:none;border-top:1px solid var(--toolbar-border);margin:0 0 10px;">
   <h3>Shortcuts &amp; Features</h3>
   <h4>Cards</h4>
   <div class="help-row"><span class="help-key">double-click canvas</span><span class="help-desc">add new card</span></div>
@@ -301,9 +350,312 @@ html.dark #sync-btn.saved {
   <div class="help-row"><span class="help-key">Space+drag</span><span class="help-desc">pan</span></div>
   <div class="help-row"><span class="help-key">Ctrl+scroll / pinch</span><span class="help-desc">zoom</span></div>
   <h4>File</h4>
-  <div class="help-row"><span class="help-key">Sync to File</span><span class="help-desc">save &amp; auto-sync</span></div>
-  <div class="help-row"><span class="help-key">Merge</span><span class="help-desc">import cards from file</span></div>
+  <div class="help-row"><span class="help-key">Open</span><span class="help-desc">load file + auto-sync</span></div>
+  <div class="help-row"><span class="help-key">Save As</span><span class="help-desc">save to file + auto-sync</span></div>
+  <div class="help-row"><span class="help-key">Add Cards</span><span class="help-desc">add cards from file</span></div>
 </div>
+
+<!-- README overlay -->
+<div id="readme-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+<div id="readme-panel">
+<button id="readme-close" onclick="document.getElementById('readme-overlay').classList.remove('open')">&times;</button>
+
+<h1>Canvas Card Format</h1>
+<p>How to programmatically create and insert cards into the canvas JSON file.</p>
+
+<h2>File Location</h2>
+<p>The active canvas file is: <code>canvas.json</code> (in the same directory as the app)</p>
+
+<h2>JSON Structure</h2>
+<pre><code>{
+  "cards": [ ... ],
+  "connections": [ ... ],
+  "camera": { "x": 0, "y": 0, "zoom": 1 }
+}</code></pre>
+
+<h2>Card Schema</h2>
+<pre><code>{
+  "id": "unique-string",
+  "x": 100,
+  "y": 200,
+  "w": 320,
+  "h": 200,
+  "color": "#FFF8E7",
+  "content": "# Heading\n\nSome **bold** text\n\n- bullet one\n- bullet two"
+}</code></pre>
+
+<h3>Fields</h3>
+<table>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>id</code></td><td>string</td><td>Unique ID. Use <code>Date.now().toString(36) + Math.random().toString(36).slice(2, 8)</code> or any unique string</td></tr>
+<tr><td><code>x</code></td><td>number</td><td>X position in world coordinates (pixels from origin)</td></tr>
+<tr><td><code>y</code></td><td>number</td><td>Y position in world coordinates</td></tr>
+<tr><td><code>w</code></td><td>number</td><td>Width in pixels. <strong>Default: 320.</strong> Range: 200-600 recommended</td></tr>
+<tr><td><code>h</code></td><td>number</td><td>Height in pixels. <strong>Default: 200.</strong> Range: 150-400 recommended</td></tr>
+<tr><td><code>color</code></td><td>string</td><td>Hex color for card background</td></tr>
+<tr><td><code>content</code></td><td>string</td><td>Markdown text content</td></tr>
+</table>
+
+<h3>Available Colors</h3>
+<table>
+<tr><th>Name</th><th>Light Mode</th><th>Use For</th></tr>
+<tr><td><span class="color-swatch" style="background:#FFF8E7"></span>Cream</td><td><code>#FFF8E7</code></td><td>Default / general</td></tr>
+<tr><td><span class="color-swatch" style="background:#FFE8D6"></span>Peach</td><td><code>#FFE8D6</code></td><td>Warm emphasis</td></tr>
+<tr><td><span class="color-swatch" style="background:#FFD6CC"></span>Coral</td><td><code>#FFD6CC</code></td><td>Alerts / important</td></tr>
+<tr><td><span class="color-swatch" style="background:#FFF3C4"></span>Butter</td><td><code>#FFF3C4</code></td><td>Highlights</td></tr>
+<tr><td><span class="color-swatch" style="background:#D8F0E0"></span>Mint</td><td><code>#D8F0E0</code></td><td>Positive / done</td></tr>
+<tr><td><span class="color-swatch" style="background:#E0E8D0"></span>Sage</td><td><code>#E0E8D0</code></td><td>Neutral grouping</td></tr>
+<tr><td><span class="color-swatch" style="background:#DBEAFE"></span>Sky</td><td><code>#DBEAFE</code></td><td>Info / reference</td></tr>
+<tr><td><span class="color-swatch" style="background:#E8DFEF"></span>Lavender</td><td><code>#E8DFEF</code></td><td>Creative / ideas</td></tr>
+</table>
+
+<h3>Rendering Dimensions (exact CSS values)</h3>
+<p>These are the exact rendering properties -- use them to predict how content will look inside a card.</p>
+
+<p><strong>Card container:</strong></p>
+<ul>
+<li>Border radius: 8px</li>
+<li>Border: 1px solid (light gray in light mode)</li>
+<li>Min width: 160px, min height: 80px</li>
+<li>Shadow: subtle drop shadow</li>
+</ul>
+
+<p><strong>Card body (content area):</strong></p>
+<ul>
+<li>Padding: 10px top/bottom, 12px left/right</li>
+<li>Font: <code>-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif</code></li>
+<li>Font size: 14px</li>
+<li>Line height: 1.5 (= 21px per line)</li>
+<li>Word wrap: break-word</li>
+<li>Overflow: auto (scrolls if content exceeds height)</li>
+</ul>
+
+<p><strong>Usable content width</strong> = card.w - 24px (12px padding each side) - 2px (border)</p>
+<ul>
+<li>A 320px wide card has ~294px of usable text width</li>
+<li>At 14px system font, this fits roughly <strong>40-50 characters per line</strong></li>
+</ul>
+
+<p><strong>Usable content height</strong> = card.h - 20px (10px padding each side) - 2px (border)</p>
+<ul>
+<li>A 200px tall card has ~178px of usable text height</li>
+<li>At 21px per line, this fits roughly <strong>8 lines</strong> of body text</li>
+</ul>
+
+<h3>Content Formatting (Markdown)</h3>
+<p>Cards use Tiptap (ProseMirror) for editing, which supports markdown input rules. The display renderer handles the same subset.</p>
+
+<p><strong>Headings</strong> (rendered at distinct sizes in both edit and display mode):</p>
+<ul>
+<li><code># H1</code> -- font-size: 1.5em (21px), font-weight: 700, margin: 0.3em top/bottom</li>
+<li><code>## H2</code> -- font-size: 1.25em (17.5px), font-weight: 700, margin: 0.25em</li>
+<li><code>### H3</code> -- font-size: 1.1em (15.4px), font-weight: 600, margin: 0.2em</li>
+</ul>
+
+<p><strong>Inline formatting:</strong></p>
+<ul>
+<li><code>**bold**</code> -- font-weight: 700</li>
+<li><code>*italic*</code> -- font-style: italic</li>
+<li><code>`inline code`</code> -- monospace, light gray background, 0.9em font-size, 3px border-radius</li>
+</ul>
+
+<p><strong>Lists:</strong></p>
+<ul>
+<li><code>- item</code> or <code>* item</code> -- unordered list with bullet</li>
+<li><code>1. item</code> -- ordered list with number</li>
+<li>Lists have 1.5em left padding, no extra margin per item</li>
+<li>Tiptap wraps list item text in <code>&lt;p&gt;</code> tags (margin normalized to 0)</li>
+</ul>
+
+<p><strong>Links:</strong></p>
+<ul>
+<li><code>[text](url)</code> -- underlined, inherits text color</li>
+</ul>
+
+<p><strong>Paragraphs:</strong></p>
+<ul>
+<li>Blank line between text creates a new paragraph</li>
+<li>Paragraph margin: 0.3em top/bottom</li>
+<li>Single newline within a paragraph: depends on context (Tiptap treats Enter as new paragraph)</li>
+</ul>
+
+<p><strong>Not supported:</strong> Tables, images, blockquotes, horizontal rules, code blocks (fenced). Keep content simple.</p>
+
+<h3>Estimating Card Size from Content</h3>
+<p>Use this to calculate how big a card should be:</p>
+<pre><code>lines_needed = 0
+for each line in content.split('\n'):
+    if line starts with '#':  # heading
+        lines_needed += 2  # heading + margin
+    elif line starts with '- ':  # list item
+        lines_needed += 1
+    elif line == '':  # blank line
+        lines_needed += 0.5
+    else:  # body text
+        chars = len(line)
+        wrapped_lines = ceil(chars / 45)  # ~45 chars per line at 320w
+        lines_needed += wrapped_lines
+
+height = max(150, lines_needed * 21 + 40)  # 21px/line + 40px padding
+width = 320  # default, increase for wide content</code></pre>
+
+<p><strong>Tip:</strong> Keep card content concise. A card should hold ONE idea, ONE concept, ONE grouping. If you need more space, make the card wider/taller or split into multiple cards.</p>
+
+<h3>Keyboard Shortcuts (when cards are selected, not editing)</h3>
+<ul>
+<li><code>Cmd+A</code> -- select all cards</li>
+<li><code>Escape</code> -- deselect all</li>
+<li><code>Delete</code> / <code>Backspace</code> -- delete selected (confirms if &gt;1)</li>
+<li><code>Cmd+D</code> -- duplicate selected cards (offset 30px down-right)</li>
+<li><code>Arrow keys</code> -- nudge selected cards by 10px</li>
+<li><code>Shift+Click</code> -- toggle card in/out of selection</li>
+<li>Click empty canvas -- deselect all</li>
+<li>Drag on empty canvas -- rubber band / marquee select</li>
+</ul>
+
+<h2>Connection Schema</h2>
+<pre><code>{
+  "from": "card-id-1",
+  "to": "card-id-2",
+  "label": ""
+}</code></pre>
+<p>Connections draw a line between two cards. <code>label</code> is optional (currently unused but reserved).</p>
+
+<h2>Layout Best Practices</h2>
+
+<h3>Spacing</h3>
+<ul>
+<li><strong>Horizontal gap between cards:</strong> 50-80px minimum</li>
+<li><strong>Vertical gap between cards:</strong> 50-80px minimum</li>
+<li><strong>Row height:</strong> Cards in a row should share the same <code>y</code> value</li>
+<li><strong>Column width:</strong> Cards in a column should share the same <code>x</code> value</li>
+</ul>
+
+<h3>Grouping Patterns</h3>
+
+<p><strong>Horizontal row (related items):</strong></p>
+<pre><code>Card A (x:100, y:100)  Card B (x:470, y:100)  Card C (x:840, y:100)</code></pre>
+<p>Formula: next card x = previous x + previous w + 50</p>
+
+<p><strong>Vertical column (hierarchy/sequence):</strong></p>
+<pre><code>Card A (x:100, y:100)
+Card B (x:100, y:350)
+Card C (x:100, y:600)</code></pre>
+<p>Formula: next card y = previous y + previous h + 50</p>
+
+<p><strong>Grid layout:</strong></p>
+<pre><code>A (100,100)   B (470,100)   C (840,100)
+D (100,350)   E (470,350)   F (840,350)</code></pre>
+
+<p><strong>Hub and spoke (central concept + related):</strong></p>
+<pre><code>              B (400,50)
+A (100,250)   CENTER (400,250)   C (700,250)
+              D (400,450)</code></pre>
+
+<h3>Avoiding Overlaps</h3>
+<p>When adding cards to an existing canvas:</p>
+<ol>
+<li>Read the existing <code>cards</code> array</li>
+<li>Calculate the bounding box: <code>maxX = max(card.x + card.w)</code>, <code>maxY = max(card.y + card.h)</code></li>
+<li>Place new cards BELOW the existing ones: start at <code>y = maxY + 100</code></li>
+<li>Or place to the RIGHT: start at <code>x = maxX + 100</code></li>
+</ol>
+
+<p><strong>Safe insertion formula:</strong></p>
+<pre><code>existing_cards = state["cards"]
+if existing_cards:
+    max_y = max(c["y"] + c["h"] for c in existing_cards)
+    start_y = max_y + 100
+else:
+    start_y = 100
+
+# Place new cards starting at (100, start_y)</code></pre>
+
+<h3>Sizing Guide</h3>
+<table>
+<tr><th>Content Length</th><th>Recommended Size</th></tr>
+<tr><td>Title only (1-5 words)</td><td>w: 250, h: 100</td></tr>
+<tr><td>Short (1-2 lines)</td><td>w: 300, h: 150</td></tr>
+<tr><td>Medium (3-5 lines)</td><td>w: 320, h: 200</td></tr>
+<tr><td>Long (paragraph)</td><td>w: 400, h: 280</td></tr>
+<tr><td>Detailed (multiple paragraphs)</td><td>w: 450, h: 350</td></tr>
+<tr><td>List (5+ items)</td><td>w: 350, h: 300</td></tr>
+</table>
+
+<h3>Color Coding Conventions</h3>
+<p>Use colors to create visual groupings:</p>
+<ul>
+<li>Same color = same category/group</li>
+<li>Different color = different category</li>
+<li>Coral/Peach for important/action items</li>
+<li>Mint/Sage for completed/reference items</li>
+<li>Lavender for creative/exploratory ideas</li>
+<li>Cream for general/default</li>
+</ul>
+
+<h2>Example: Adding a Row of Cards</h2>
+<pre><code>{
+  "cards": [
+    {
+      "id": "shape-1",
+      "x": 100, "y": 100, "w": 350, "h": 250,
+      "color": "#FFF8E7",
+      "content": "# Shape 1: Display\n\nThe portfolio piece. \"This is who I am.\"\n\nArchitecture firms, therapists, lawyers."
+    },
+    {
+      "id": "shape-2",
+      "x": 500, "y": 100, "w": 350, "h": 250,
+      "color": "#DBEAFE",
+      "content": "# Shape 2: Event\n\n\"This thing is happening.\"\n\nWeddings, conferences, Airbnb stays."
+    },
+    {
+      "id": "shape-3",
+      "x": 900, "y": 100, "w": 350, "h": 250,
+      "color": "#FFE8D6",
+      "content": "# Shape 3: Communication\n\n\"This thing exists. Come look.\"\n\nProperty listings, book launches, fundraisers."
+    }
+  ],
+  "connections": [
+    { "from": "shape-1", "to": "shape-2", "label": "" },
+    { "from": "shape-2", "to": "shape-3", "label": "" }
+  ]
+}</code></pre>
+
+<h2>Merging Cards from Another File</h2>
+<p>The canvas has a <strong>Merge</strong> button. To add cards without replacing existing ones:</p>
+<ol>
+<li>Write your new cards to a separate JSON file (same format)</li>
+<li>In the canvas, click <strong>Merge</strong> and pick your file</li>
+<li>The new cards are added offset to the right of existing cards</li>
+</ol>
+
+<p><strong>For programmatic merging:</strong></p>
+<ol>
+<li>Read the existing canvas.json</li>
+<li>Calculate safe placement (below or right of existing cards)</li>
+<li>Append your new cards to the <code>cards</code> array</li>
+<li>Append any new connections</li>
+<li>Write the merged result back</li>
+</ol>
+
+<p><strong>IMPORTANT:</strong> Do not overwrite the file while the canvas app has it open -- the app autosaves and will overwrite your changes. Either:</p>
+<ul>
+<li>Write to a separate file and use the Merge button</li>
+<li>Or coordinate: tell the user to stop editing, you write, they reload</li>
+</ul>
+
+</div>
+</div>
+
+<script>
+// --- Escape key closes README overlay ---
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('readme-overlay').classList.contains('open')) {
+    document.getElementById('readme-overlay').classList.remove('open');
+    e.stopPropagation();
+  }
+}, true);
+</script>
 
 <script>
 // --- Theme (initialized later, after color swatches exist) ---
@@ -353,8 +705,8 @@ let activeColorIndex = 0;
 const viewport = document.getElementById('canvas-viewport');
 const canvas = document.getElementById('canvas');
 const svgLayer = document.getElementById('svg-layer');
-const syncBtn = document.getElementById('sync-btn');
-const syncLabel = document.getElementById('sync-label');
+const fileStatus = document.getElementById('file-status');
+const syncLabel = document.getElementById('file-label');
 const zoomDisplay = document.getElementById('zoom-display');
 
 function getActiveColor() { return getColorHex(COLORS[activeColorIndex]); }
@@ -1065,15 +1417,14 @@ function updateSyncStatus(msg, temporary) {
 
   if (msg === 'Saving…') {
     pendingSaved = false;
-    syncBtn.classList.remove('saved');
-    syncBtn.classList.add('saving');
+    fileStatus.classList.remove('saved');
+    fileStatus.classList.add('active', 'saving');
     if (fileHandle) syncLabel.textContent = fileHandle.name;
     savingStartedAt = Date.now();
     return;
   }
 
   if (msg === 'Saved') {
-    // Ensure yellow shows for at least 300ms before going green
     var elapsed = Date.now() - savingStartedAt;
     if (elapsed < 300) {
       pendingSaved = true;
@@ -1088,10 +1439,9 @@ function updateSyncStatus(msg, temporary) {
   }
 
   if (msg) {
-    // Error or other message
-    syncBtn.classList.remove('saving', 'saved');
+    fileStatus.classList.remove('saving', 'saved');
+    fileStatus.classList.add('active');
     syncLabel.textContent = msg;
-    syncBtn.classList.remove('synced');
     if (temporary) {
       syncStatusTimer = setTimeout(() => updateSyncStatus(), 3000);
     }
@@ -1099,18 +1449,18 @@ function updateSyncStatus(msg, temporary) {
   }
 
   // Default: show current state
-  syncBtn.classList.remove('saving', 'saved');
+  fileStatus.classList.remove('saving', 'saved');
   if (fileHandle) {
     syncLabel.textContent = fileHandle.name;
-    syncBtn.classList.add('synced');
+    fileStatus.classList.add('active');
   } else {
-    syncLabel.textContent = 'Sync to File';
-    syncBtn.classList.remove('synced');
+    syncLabel.textContent = '';
+    fileStatus.classList.remove('active');
   }
 }
 function showSaved() {
-  syncBtn.classList.remove('saving');
-  syncBtn.classList.add('saved');
+  fileStatus.classList.remove('saving');
+  fileStatus.classList.add('active', 'saved');
   syncLabel.textContent = fileHandle ? fileHandle.name : 'Saved';
   syncStatusTimer = setTimeout(() => updateSyncStatus(), 1200);
 }
@@ -1136,46 +1486,68 @@ function loadFromLocalStorage() {
   return false;
 }
 
-async function syncToFile() {
-  console.log('[sync] syncToFile called');
-  if (typeof window.showSaveFilePicker !== 'function') {
-    console.warn('[sync] showSaveFilePicker not available, falling back to download');
-    downloadAsJson();
+async function openFile() {
+  console.log('[file] openFile called');
+  if (typeof window.showOpenFilePicker !== 'function') {
+    alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
     return;
   }
-  console.log('[sync] calling showSaveFilePicker...');
   try {
-    fileHandle = await window.showSaveFilePicker({
-      suggestedName: 'canvas.json',
+    const [handle] = await window.showOpenFilePicker({
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
-    console.log('[sync] file handle obtained:', fileHandle.name);
-    await storeFileHandle(fileHandle);
-    const file = await fileHandle.getFile();
+    console.log('[file] file handle obtained:', handle.name);
+    const file = await handle.getFile();
     const text = await file.text();
     if (text.trim()) {
       try {
         const loaded = JSON.parse(text);
-        if (loaded.cards && loaded.cards.length > 0) {
+        if (loaded.cards) {
           state = loaded;
           if (!state.connections) state.connections = [];
           if (state.camera) { camX = state.camera.x || 0; camY = state.camera.y || 0; zoom = state.camera.zoom || 1; }
           renderAll();
           updateTransform();
         }
-      } catch (e) { console.warn('File contained invalid JSON, starting fresh'); }
+      } catch (e) { console.warn('[file] File contained invalid JSON'); alert('File does not contain valid JSON.'); return; }
     }
+    fileHandle = handle;
+    await storeFileHandle(fileHandle);
+    updateSyncStatus();
+    console.log('[file] opened and connected to', handle.name);
+  } catch (e) {
+    if (e.name !== 'AbortError') { console.error('[file] Open failed:', e); updateSyncStatus('Open failed', true); }
+  }
+}
+
+async function saveAsFile() {
+  console.log('[file] saveAsFile called');
+  if (typeof window.showSaveFilePicker !== 'function') {
+    console.warn('[file] showSaveFilePicker not available, falling back to download');
+    downloadAsJson();
+    return;
+  }
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'canvas.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    console.log('[file] save handle obtained:', handle.name);
+    fileHandle = handle;
+    await storeFileHandle(fileHandle);
     updateSyncStatus();
     await writeToFile();
-    console.log('[sync] initial write complete');
+    console.log('[file] initial write complete');
   } catch (e) {
-    if (e.name !== 'AbortError') {
-      console.error('[sync] Sync failed:', e);
-      updateSyncStatus('Sync failed', true);
-    } else {
-      console.log('[sync] user cancelled file picker');
-    }
+    if (e.name !== 'AbortError') { console.error('[file] Save As failed:', e); updateSyncStatus('Save failed', true); }
   }
+}
+
+function disconnectFile() {
+  fileHandle = null;
+  clearFileHandle();
+  updateSyncStatus();
+  console.log('[file] disconnected');
 }
 
 // Fallback for browsers without File System Access API
@@ -1217,7 +1589,7 @@ async function writeToFile() {
     if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError') {
       fileHandle = null;
       clearFileHandle();
-      updateSyncStatus('File lost — re-sync needed');
+      updateSyncStatus('File lost — reconnect via Open');
     }
   } finally {
     isWriting = false;
@@ -1238,7 +1610,7 @@ function scheduleSave() {
   console.log('[save] new timer set:', saveTimer);
 }
 
-async function mergeFile() {
+async function importCards() {
   if (typeof window.showOpenFilePicker !== 'function') {
     alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
     return;
@@ -1294,12 +1666,12 @@ updateTransform();
   if (savedName) {
     // Show filename immediately while we check permission
     syncLabel.textContent = savedName;
-    syncBtn.classList.add('synced');
+    fileStatus.classList.add('active');
   }
   try {
     var handle = await loadFileHandle();
     if (!handle) {
-      if (savedName) { syncLabel.textContent = 'Sync to File'; syncBtn.classList.remove('synced'); localStorage.removeItem('canvas-sync-filename'); }
+      if (savedName) { syncLabel.textContent = ''; fileStatus.classList.remove('active'); localStorage.removeItem('canvas-sync-filename'); }
       return;
     }
     var perm = await handle.requestPermission({ mode: 'readwrite' });
@@ -1324,16 +1696,16 @@ updateTransform();
       updateSyncStatus();
     } else {
       console.log('[sync] permission denied for stored handle');
-      syncLabel.textContent = 'Sync to File';
-      syncBtn.classList.remove('synced');
+      syncLabel.textContent = '';
+      fileStatus.classList.remove('active');
       clearFileHandle();
     }
   } catch (e) {
     console.warn('[sync] reconnect failed:', e);
     fileHandle = null;
     clearFileHandle();
-    syncLabel.textContent = 'Sync to File';
-    syncBtn.classList.remove('synced');
+    syncLabel.textContent = '';
+    fileStatus.classList.remove('active');
   }
 })();
 </script>
