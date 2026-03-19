@@ -1,0 +1,82 @@
+{
+  "cards": [
+    {"id":"r0-hdr","x":600,"y":50,"w":500,"h":90,"color":"#FFF3C4","content":"# The Essence"},
+    {"id":"r0-jewel","x":50,"y":190,"w":300,"h":100,"color":"#FFF8E7","content":"# Wish-Fulfilling Jewel\n\n**Midwifing coherence**"},
+    {"id":"r0-offer","x":390,"y":190,"w":420,"h":170,"color":"#FFF8E7","content":"*You have something in you that wants to exist in the world. You can feel it but you can't make it. In one conversation, we get it out of you and put it live on the internet.*"},
+    {"id":"r0-do","x":850,"y":190,"w":380,"h":260,"color":"#FFF8E7","content":"## What we actually do\n\n1. Listen at the level where someone's world actually lives\n2. Ask the questions they didn't know to ask themselves\n3. Sense what matters and what doesn't\n4. Translate through every layer — design, story, structure, feel\n5. Make it real, live, in their hands\n6. They see themselves clearly for the first time"},
+    {"id":"r0-rice","x":1270,"y":190,"w":350,"h":150,"color":"#E8DFEF","content":"## Rice You Already Sell\n\nA Chinese person doesn't think to sell rice. It's just so easy. But someone at the market sells nothing but rice — and there's always a line."},
+
+    {"id":"r1-hdr","x":600,"y":650,"w":500,"h":90,"color":"#FFF3C4","content":"# Jobs to be Done"},
+    {"id":"r1-pres","x":50,"y":790,"w":300,"h":220,"color":"#FFF8E7","content":"## PRESENTATION\nof a **Thing** or **Person**\n\n**Convey:**\n1. Information\n2. Status\n3. Vibe"},
+    {"id":"r1-proc","x":390,"y":790,"w":300,"h":170,"color":"#FFF8E7","content":"## PROCESS\n*Manage a*\n\n1. A Service Process\n2. An Event Process"},
+    {"id":"r1-dist","x":730,"y":790,"w":300,"h":200,"color":"#FFF8E7","content":"## DISTRIBUTION\n*Optimization:*\n\n1. AI\n2. Search Engine\n3. Social Media\n4. Word of Mouth"},
+
+    {"id":"r2-hdr","x":600,"y":1210,"w":500,"h":90,"color":"#FFF3C4","content":"# Core"},
+    {"id":"r2-who","x":50,"y":1350,"w":450,"h":380,"color":"#FFF8E7","content":"## Who is it for\n\n- They need it **QUICK**\n  - => **Speed**\n- They are not familiar with what exactly that which they need and it's not their main thing and they need us to carry forward their implying\n  - **They don't even know exactly what they want**\n    - => We listen to them\n    - => We help educate them\n    - => We help them build what they want — exactly what carries forward their implying\n- **We are AI Native**"},
+
+    {"id":"r3-hdr","x":600,"y":1930,"w":500,"h":90,"color":"#FFF3C4","content":"# Strategies"},
+    {"id":"r3-focus","x":50,"y":2070,"w":400,"h":100,"color":"#E8DFEF","content":"## Focus\nSphere x Niche that have large concentration of **Core**"},
+    {"id":"r3-dist","x":490,"y":2070,"w":400,"h":260,"color":"#E8DFEF","content":"## Distribution\n\n**Strategies:**\n- Make it and show it to them\n\n**Variables:**\n- Perceived Value\n- Perceived Likelihood of Success\n- Trust In Your Character\n- Trust in Your Ability"},
+
+    {"id":"r4-hdr","x":600,"y":2530,"w":500,"h":90,"color":"#FFF3C4","content":"# Gaps"},
+    {"id":"r4-gap","x":50,"y":2670,"w":380,"h":100,"color":"#FFD6CC","content":"Totally custom to them on **PRESENTATION & PROCESS**"},
+
+    {"id":"r5-hdr","x":600,"y":2970,"w":500,"h":90,"color":"#FFF3C4","content":"# Spheres & Specific Businesses"},
+    {"id":"r5-wed","x":50,"y":3110,"w":320,"h":200,"color":"#FFE8D6","content":"## 📍 Weddings\n\n**What:** PRESENTATION & PROCESS\n\n- Individuals\n- Wedding Planners"},
+    {"id":"r5-fun","x":410,"y":3110,"w":260,"h":140,"color":"#FFE8D6","content":"## 📍 Funerals\n\n- Funeral Homes"},
+    {"id":"r5-life","x":710,"y":3110,"w":300,"h":150,"color":"#E0E8D0","content":"## Other Life Events\n\n- Baby showers\n- Coming of Age (Bar Mitzvahs, Quinceañeras)"},
+    {"id":"r5-conf","x":1050,"y":3110,"w":220,"h":80,"color":"#E0E8D0","content":"## Conferences"},
+    {"id":"r5b-re","x":50,"y":3370,"w":280,"h":160,"color":"#FFE8D6","content":"## 📍 Real Estate\n\n- Agents\n- Property Listings"},
+    {"id":"r5b-loc","x":370,"y":3370,"w":280,"h":180,"color":"#FFE8D6","content":"## 📍 Local Businesses\n\n- Dentists\n- Lawyers\n- Photographers"},
+    {"id":"r5b-rem","x":690,"y":3370,"w":380,"h":280,"color":"#FFE8D6","content":"## 📍 Remote Contractors\n\n**Who:**\n- Coaches, Consultants, Agencies\n- Presentation, Marketing Teams\n\n**What:**\n- Pitch Pages\n- Delivery Portal\n- Client Deliverables\n- Micro Sites"},
+    {"id":"r5b-sm","x":1110,"y":3370,"w":280,"h":200,"color":"#E0E8D0","content":"## Small Businesses\n\n- Dentist\n- Therapist\n- Lawyer\n- Restaurants"},
+    {"id":"r5b-edu","x":1430,"y":3370,"w":230,"h":120,"color":"#E0E8D0","content":"## Education\n\n- Thought Leaders"},
+
+    {"id":"r6-hdr","x":600,"y":3850,"w":500,"h":90,"color":"#FFF3C4","content":"# The Wedding Shape (Filter)"},
+    {"id":"r6-c1","x":50,"y":3990,"w":250,"h":80,"color":"#DBEAFE","content":"**1.** Bounded, repeatable deliverable"},
+    {"id":"r6-c2","x":340,"y":3990,"w":250,"h":80,"color":"#DBEAFE","content":"**2.** Simple tech ceiling"},
+    {"id":"r6-c3","x":630,"y":3990,"w":250,"h":80,"color":"#DBEAFE","content":"**3.** High emotional + financial stakes"},
+    {"id":"r6-c4","x":920,"y":3990,"w":250,"h":80,"color":"#DBEAFE","content":"**4.** Weak tech competition"},
+    {"id":"r6-c5","x":1210,"y":3990,"w":250,"h":80,"color":"#DBEAFE","content":"**5.** Client doesn't want to manage it"},
+    {"id":"r6-c6","x":50,"y":4110,"w":250,"h":80,"color":"#DBEAFE","content":"**6.** Specific, enumerable problems"},
+    {"id":"r6-c7","x":340,"y":4110,"w":250,"h":80,"color":"#DBEAFE","content":"**7.** Each problem is AI-solvable"},
+    {"id":"r6-c8","x":630,"y":4110,"w":250,"h":80,"color":"#DBEAFE","content":"**8.** 10x improvement possible"},
+    {"id":"r6-c9","x":920,"y":4110,"w":250,"h":80,"color":"#DBEAFE","content":"**9.** Built-in community"},
+    {"id":"r6-c10","x":1210,"y":4110,"w":250,"h":80,"color":"#DBEAFE","content":"**10.** Clear end point"},
+    {"id":"r6-syn","x":50,"y":4230,"w":600,"h":90,"color":"#E8DFEF","content":"**Synthesis:** Sensing without tech is just consulting. Tech without sensing is just Squarespace."},
+
+    {"id":"r7-hdr","x":600,"y":4520,"w":500,"h":90,"color":"#FFF3C4","content":"# What We Offer"},
+    {"id":"r7-spd","x":50,"y":4660,"w":320,"h":120,"color":"#FFF8E7","content":"## 1. Speed\n\nAgency: 4-8 weeks, $5K-$50K\nDIY: days of frustration\n**Us: one conversation**"},
+    {"id":"r7-con","x":410,"y":4660,"w":320,"h":130,"color":"#FFF8E7","content":"## 2. Full Concierge\n\nDomain, hosting, design, copy, build, deploy. They talk, we handle everything. The **anti-Squarespace**."},
+    {"id":"r7-felt","x":770,"y":4660,"w":320,"h":130,"color":"#FFF8E7","content":"## 3. Felt-Sense Layer\n\nThe premium version. For people whose work IS philosophical. Not everyone needs it. A dentist doesn't. An architect does."},
+    {"id":"r7-ai","x":1130,"y":4660,"w":350,"h":180,"color":"#FFF8E7","content":"## 4. AI Features\n\n- Chat-against-your-site (scroll + highlight)\n- AI intake/screening chatbot\n- Smart portfolio exploration\n\nGenuine technical moat **right now**"},
+    {"id":"r7-re","x":50,"y":4900,"w":320,"h":120,"color":"#FFF8E7","content":"## 5. Retheme Superpower\n\n\"Send us your stationery, we'll make your website match.\" Traditional agencies charge full redesign. We do it in a session."},
+    {"id":"r7-air","x":410,"y":4900,"w":320,"h":100,"color":"#FFF8E7","content":"## 6. Airtable-Backed Content\n\nUpdate a spreadsheet, site reflects it. No CMS to learn."},
+    {"id":"r7-mnt","x":770,"y":4900,"w":320,"h":120,"color":"#FFF8E7","content":"## 7. Maintenance\n\nMonitoring that downloads the page and verifies content hourly. Domain renewals, SSL. They never think about it."},
+    {"id":"r7-wed","x":1130,"y":4900,"w":350,"h":150,"color":"#FFE8D6","content":"## 8. Wedding Package\n\nStationery + matching website + AI guest chat + RSVP. The **matching** part is the killer feature. Nobody offers that."},
+
+    {"id":"r8-hdr","x":600,"y":5250,"w":500,"h":90,"color":"#FFF3C4","content":"# Two Tracks"},
+    {"id":"r8-t1","x":50,"y":5390,"w":400,"h":200,"color":"#E8DFEF","content":"## Track 1: Wish-Fulfilling Jewel\n\nProven (Nabil). Warm leads exist.\nExercises same muscle as weddings with less complexity.\nEvery client teaches about the container.\nStart here."},
+    {"id":"r8-t2","x":490,"y":5390,"w":400,"h":200,"color":"#E8DFEF","content":"## Track 2: Weddings\n\nAlways 12 pieces, same thing each time.\nHigh value to low effort once figured out.\nRicher research, deeper emotional stakes.\n\"Matching\" = nobody else does this."},
+
+    {"id":"r9-hdr","x":600,"y":5790,"w":500,"h":90,"color":"#FFF3C4","content":"# Evidence"},
+    {"id":"r9-nab","x":50,"y":5930,"w":400,"h":200,"color":"#D8F0E0","content":"## Nabil Case Study\n\nArchitecture website in 15 minutes. From one sentence about his philosophy, got his whole world. He tried Squarespace — couldn't change a font. Would pay $1,000. \"Just translating my needs.\""},
+    {"id":"r9-shk","x":490,"y":5930,"w":400,"h":180,"color":"#D8F0E0","content":"## Shakafei Testimony\n\n\"Watching you apply focusing to your approach with AI... it's been a breath of fresh air. I suddenly feel like I can **breathe**. My breathing is no longer constrained to my 1-hour sessions.\""},
+    {"id":"r9-dou","x":930,"y":5930,"w":400,"h":150,"color":"#E8DFEF","content":"## The Doula Insight (Olivia)\n\nYou're not building websites. You're a **doula for digital expression** — helping something that wants to be born into the world actually take form."},
+
+    {"id":"r10-hdr","x":600,"y":6330,"w":500,"h":90,"color":"#FFF3C4","content":"# Pricing Direction"},
+    {"id":"r10-price","x":50,"y":6470,"w":400,"h":220,"color":"#D8F0E0","content":"## Three Numbers. That's It.\n\n- **Build:** $1,500 founding rate\n- **Maintain:** $500/year\n- **Change:** $500/session\n\nNo points system, no small/medium/large, no dim sum menu. Itemizing creates hooks for people to argue about."},
+    {"id":"r10-bound","x":490,"y":6470,"w":400,"h":200,"color":"#D8F0E0","content":"## Boundaries\n\n**You get:** A live digital presence. Custom domain. Works on every device. Done.\n\n**You don't get:** A store, user accounts, complex apps, daily-managed content. If you need those, we're not your people."},
+
+    {"id":"r11-hdr","x":600,"y":6890,"w":500,"h":90,"color":"#FFF3C4","content":"# Long-term Moat"},
+    {"id":"r11-eager","x":50,"y":7030,"w":400,"h":200,"color":"#DBEAFE","content":"## The \"Eagerly Helpful Friend\" Problem\n\nCurrent AI: \"I have this feeling—\" \"YEAH YEAH I ALREADY DID IT FOR YOU.\"\n\nEvery tool on the market. Lovable doesn't ask your philosophy. Squarespace doesn't care what moves you.\n\n**Our service is the opposite.**"},
+    {"id":"r11-pipe","x":490,"y":7030,"w":400,"h":150,"color":"#DBEAFE","content":"## Recording-to-AI Pipeline\n\nEvery conversation is training data for the AI felt-sense extractor. Record everything with consent. The product is you, human, on a call. The AI version comes later."},
+
+    {"id":"r12-hdr","x":600,"y":7430,"w":500,"h":90,"color":"#FFF3C4","content":"# Decisions"},
+    {"id":"r12-dec","x":50,"y":7570,"w":350,"h":280,"color":"#D8F0E0","content":"## Decided\n\n- No e-commerce\n- No complex backends / auth / users\n- No WordPress\n- No coaching/scheduling (no money there)\n- No Shopify people (too involved)\n- Static + Airtable only\n- Keep AI features (chat, search, scroll-to-answer)\n- Speed is the moat"},
+    {"id":"r12-sens","x":440,"y":7570,"w":350,"h":280,"color":"#FFD6CC","content":"## Still Sensing\n\n- Exact founding price ($1,500 vs higher?)\n- Monthly vs yearly subscription\n- How to bound changes (dim sum model?)\n- Which sphere first beyond Nabil-type\n- Wedding timing vs website-first\n- When to build the AI taste extractor\n- Domain management (own for them?)"},
+    {"id":"r12-cuts","x":830,"y":7570,"w":500,"h":120,"color":"#FFD6CC","content":"## Why Every Cut\n\nComplexity kills speed, speed is the moat. Every cut removes: ongoing maintenance, unpredictable scope, or client needing to be actively involved. The ideal client **does not want to manage anything**."}
+  ],
+  "connections": [],
+  "camera": {"x":0,"y":0,"zoom":0.45}
+}
