@@ -322,11 +322,8 @@ When generating cards, use this render-verify-adjust loop:
 ### Discrete Ideas = Discrete Cards
 Each card should contain ONE idea, ONE concept, or ONE closely related grouping. If you find yourself writing more than 5-6 lines in a card, consider splitting it. A canvas with 15 focused cards is better than 5 dense ones.
 
-### When Uncertain About Grouping
-Generate multiple layout options and let the user choose. Offer 2-3 configurations:
-- **Option A:** Organized by category (rows per category, color-coded)
-- **Option B:** Hub-and-spoke (central concept with related ideas radiating out)
-- **Option C:** Timeline/flow (left-to-right or top-to-bottom sequence)
+### Be Decisive About Layout
+Pick the ONE layout that best fits the content and commit to it. Category rows for taxonomies and comparisons, hub-and-spoke for central concepts with radiating ideas, flow/timeline for sequences and processes. Only generate multiple options when the content genuinely could go multiple ways and you're not confident which is better.
 
 ### Size Cards Based on Content
 Always use the estimation formula from the "Estimating Card Size from Content" section. Don't guess — calculate. A card that's too small will show "..." in the renderer; a card that's too big wastes space.

@@ -684,6 +684,44 @@ var fileHandle = null;
 var saveTimer = null;
 var selectedCards = new Set();
 
+// --- Undo / Redo ---
+var undoStack = [];
+var redoStack = [];
+var MAX_UNDO = 50;
+
+function pushUndo() {
+  // Snapshot cards + connections only (not camera)
+  undoStack.push(JSON.parse(JSON.stringify({ cards: state.cards, connections: state.connections })));
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack = [];
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  redoStack.push(JSON.parse(JSON.stringify({ cards: state.cards, connections: state.connections })));
+  var snapshot = undoStack.pop();
+  state.cards = snapshot.cards;
+  state.connections = snapshot.connections;
+  stopEditing();
+  clearSelection();
+  renderAll();
+  updateTransform();
+  scheduleSave();
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  undoStack.push(JSON.parse(JSON.stringify({ cards: state.cards, connections: state.connections })));
+  var snapshot = redoStack.pop();
+  state.cards = snapshot.cards;
+  state.connections = snapshot.connections;
+  stopEditing();
+  clearSelection();
+  renderAll();
+  updateTransform();
+  scheduleSave();
+}
+
 // Light hex + dark hex for each color.
 // Dark variants: same hue, saturation boosted, lightness ~22-28%
 const COLORS = [
@@ -725,6 +763,7 @@ COLORS.forEach((col, i) => {
     activeColorIndex = i;
     // Apply color to all selected cards
     if (selectedCards.size > 0) {
+      pushUndo();
       var hex = getColorHex(col);
       selectedCards.forEach(function(id) {
         var c = state.cards.find(function(card) { return card.id === id; });
@@ -836,7 +875,7 @@ function renderCard(c) {
     sw.className = 'color-swatch';
     sw.style.background = getColorHex(col);
     sw.title = col.name;
-    sw.onclick = (e) => { e.stopPropagation(); c.color = getColorHex(col); el.style.background = c.color; scheduleSave(); };
+    sw.onclick = (e) => { e.stopPropagation(); pushUndo(); c.color = getColorHex(col); el.style.background = c.color; scheduleSave(); };
     palette.appendChild(sw);
   });
   el.appendChild(palette);
@@ -907,6 +946,7 @@ function renderCard(c) {
       const dx = e.clientX - startX, dy = e.clientY - startY;
       if (!dragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
         dragging = true;
+        pushUndo();
         el.style.zIndex = 2;
         el.classList.add('dragging');
       }
@@ -966,6 +1006,7 @@ window.stopEditing = function() {};
 // --- Resize ---
 function startResize(e, c, el) {
   e.preventDefault(); e.stopPropagation();
+  pushUndo();
   const startW = c.w, startH = c.h;
   const startSX = e.clientX, startSY = e.clientY;
 
@@ -1017,6 +1058,7 @@ function startConnection(e, cardId, side) {
         (cn.from === targetCard.id && cn.to === cardId)
       );
       if (!exists) {
+        pushUndo();
         state.connections.push({ from: cardId, to: targetCard.id, label: '' });
         renderConnections();
         scheduleSave();
@@ -1110,6 +1152,7 @@ function selectCard(id) {
 function deleteSelectedCards() {
   if (selectedCards.size === 0) return;
   if (selectedCards.size > 1 && !confirm(`Delete ${selectedCards.size} selected cards?`)) return;
+  pushUndo();
   stopEditing();
   const ids = [...selectedCards];
   ids.forEach(id => {
@@ -1124,6 +1167,7 @@ function deleteSelectedCards() {
 
 // --- Card CRUD ---
 function addCard(x, y) {
+  pushUndo();
   const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
   const c = {
     id: uid(),
@@ -1141,6 +1185,7 @@ function addCard(x, y) {
 }
 
 function deleteCard(id) {
+  pushUndo();
   stopEditing();
   state.cards = state.cards.filter(c => c.id !== id);
   state.connections = state.connections.filter(cn => cn.from !== id && cn.to !== id);
@@ -1272,6 +1317,7 @@ function selectAll() {
 
 function duplicateSelected() {
   if (selectedCards.size === 0) return;
+  pushUndo();
   var newIds = [];
   var idMap = {};
   selectedCards.forEach(function(id) {
@@ -1317,6 +1363,17 @@ function nudgeSelected(dx, dy) {
 document.addEventListener('keydown', (e) => {
   var isEditing = !!document.querySelector('.card.editing');
   var inInput = e.target.matches('textarea,input,[contenteditable]');
+
+  // Cmd/Ctrl+Z — undo, Cmd/Ctrl+Shift+Z — redo (only when not editing a card)
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !isEditing) {
+    e.preventDefault();
+    if (e.shiftKey) {
+      redo();
+    } else {
+      undo();
+    }
+    return;
+  }
 
   // Delete / Backspace — delete selected cards
   if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCards.size > 0 && !inInput && !isEditing) {
