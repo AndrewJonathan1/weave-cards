@@ -1488,11 +1488,15 @@ function loadFromLocalStorage() {
 
 async function openFile() {
   console.log('[file] openFile called');
+  console.log('[file] showOpenFilePicker available:', typeof window.showOpenFilePicker);
+  console.log('[file] isSecureContext:', window.isSecureContext);
+  console.log('[file] protocol:', location.protocol, 'host:', location.host);
   if (typeof window.showOpenFilePicker !== 'function') {
     alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
     return;
   }
   try {
+    console.log('[file] calling showOpenFilePicker...');
     const [handle] = await window.showOpenFilePicker({
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
@@ -1516,18 +1520,23 @@ async function openFile() {
     updateSyncStatus();
     console.log('[file] opened and connected to', handle.name);
   } catch (e) {
-    if (e.name !== 'AbortError') { console.error('[file] Open failed:', e); updateSyncStatus('Open failed', true); }
+    console.error('[file] Open failed:', e.name, e.message, e);
+    if (e.name !== 'AbortError') { updateSyncStatus('Open failed', true); }
   }
 }
 
 async function saveAsFile() {
   console.log('[file] saveAsFile called');
+  console.log('[file] showSaveFilePicker available:', typeof window.showSaveFilePicker);
+  console.log('[file] isSecureContext:', window.isSecureContext);
+  console.log('[file] protocol:', location.protocol, 'host:', location.host);
   if (typeof window.showSaveFilePicker !== 'function') {
     console.warn('[file] showSaveFilePicker not available, falling back to download');
     downloadAsJson();
     return;
   }
   try {
+    console.log('[file] calling showSaveFilePicker...');
     const handle = await window.showSaveFilePicker({
       suggestedName: 'canvas.json',
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
@@ -1539,7 +1548,8 @@ async function saveAsFile() {
     await writeToFile();
     console.log('[file] initial write complete');
   } catch (e) {
-    if (e.name !== 'AbortError') { console.error('[file] Save As failed:', e); updateSyncStatus('Save failed', true); }
+    console.error('[file] Save As failed:', e.name, e.message, e);
+    if (e.name !== 'AbortError') { updateSyncStatus('Save failed', true); }
   }
 }
 
@@ -1611,11 +1621,16 @@ function scheduleSave() {
 }
 
 async function importCards() {
+  console.log('[file] importCards called');
+  console.log('[file] showOpenFilePicker available:', typeof window.showOpenFilePicker);
+  console.log('[file] isSecureContext:', window.isSecureContext);
+  console.log('[file] protocol:', location.protocol, 'host:', location.host);
   if (typeof window.showOpenFilePicker !== 'function') {
     alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
     return;
   }
   try {
+    console.log('[file] calling showOpenFilePicker for import...');
     const [handle] = await window.showOpenFilePicker({
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
@@ -1645,7 +1660,10 @@ async function importCards() {
     }
     renderAll();
     scheduleSave();
-  } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+  } catch (e) {
+    console.error('[file] Import failed:', e.name, e.message, e);
+    if (e.name !== 'AbortError') { /* non-cancel error */ }
+  }
 }
 
 // --- Init ---

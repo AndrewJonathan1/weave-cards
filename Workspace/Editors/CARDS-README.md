@@ -267,6 +267,90 @@ Use colors to create visual groupings:
 }
 ```
 
+## Visual Renderer
+
+A Python script renders canvas JSON files to PNG images for visual verification.
+
+### Usage
+
+```bash
+python3 scripts/render-canvas.py input.json output.png
+```
+
+Path (from project root): `scripts/render-canvas.py`
+
+Requires: `pip3 install Pillow`
+
+### What the Renderer Shows
+
+- **Cards** as colored rounded rectangles at exact x,y positions with exact w,h dimensions
+- **Background colors** matching the hex values from JSON
+- **Card content text** rendered inside each card (basic markdown — headers shown larger, bold/italic markers stripped)
+- **Card IDs** shown small in the bottom-right corner of each card (gray text)
+- **Connection lines** with arrowheads between connected cards
+- **100px grid lines** with coordinate ruler marks every 200px
+- **Bounding box** around all cards with total dimensions label
+- **Gap measurements** (red) between adjacent cards showing pixel distances
+
+The image auto-sizes to fit all cards with 80px padding. Negative coordinates are handled via offset.
+
+### LLM Verification Workflow
+
+When generating cards, use this render-verify-adjust loop:
+
+1. **Generate** your card JSON and write it to a temp file (e.g., `/tmp/canvas-draft.json`)
+2. **Render** it: `python3 scripts/render-canvas.py /tmp/canvas-draft.json /tmp/canvas-draft.png`
+3. **Read the PNG** and check for:
+   - **Overlapping cards** — any cards whose rectangles visually overlap
+   - **Bad spacing** — gaps that are too tight (<30px) or too wide (>200px between related cards)
+   - **Text overflow** — content showing "..." means the card is too small for its content
+   - **Color consistency** — same-category cards should have the same color
+   - **Layout balance** — is the overall arrangement visually balanced, or lopsided?
+   - **Connection lines** — do they connect the right cards? Are lines crossing through other cards?
+   - **Bounding box** — is the total size reasonable? Very wide layouts (>3000px) may be hard to navigate
+4. **Adjust** — fix any issues found and re-render
+5. **Repeat** until the layout looks clean
+
+**Common issues to fix:**
+- Card too small for text → increase `h` (use the sizing formula)
+- Cards overlapping → check that `x + w + gap < next_card.x` for horizontal neighbors
+- Uneven row → ensure cards in the same row share the same `y` value
+- Too cramped → increase gaps to 80-100px
+
+## Best Practices for LLM Card Generation
+
+### Discrete Ideas = Discrete Cards
+Each card should contain ONE idea, ONE concept, or ONE closely related grouping. If you find yourself writing more than 5-6 lines in a card, consider splitting it. A canvas with 15 focused cards is better than 5 dense ones.
+
+### When Uncertain About Grouping
+Generate multiple layout options and let the user choose. Offer 2-3 configurations:
+- **Option A:** Organized by category (rows per category, color-coded)
+- **Option B:** Hub-and-spoke (central concept with related ideas radiating out)
+- **Option C:** Timeline/flow (left-to-right or top-to-bottom sequence)
+
+### Size Cards Based on Content
+Always use the estimation formula from the "Estimating Card Size from Content" section. Don't guess — calculate. A card that's too small will show "..." in the renderer; a card that's too big wastes space.
+
+### Use Colors Meaningfully
+- Same color = same category or grouping
+- Use Butter (`#FFF3C4`) for section headers
+- Use Cream (`#FFF8E7`) for general content
+- Use distinct colors (Sky, Lavender, Peach, Sage, Mint) to visually separate categories
+- Don't use more than 4-5 colors in one layout — it gets noisy
+
+### Check Existing Cards Before Placing New Ones
+Always read the current canvas JSON first. Calculate the bounding box of existing cards and place new cards outside it (below or to the right, with 100px gap).
+
+### Leave Generous Gaps
+- **80-100px** between cards is ideal
+- Too much space is always better than too little — the user can zoom out, but overlapping cards are broken
+- Between sections/zones, use **120-150px** for visual separation
+
+### Connection Best Practices
+- Only connect cards that have a meaningful relationship (cause→effect, parent→child, sequence)
+- Keep connections short — connect nearby cards, not distant ones
+- Use connections sparingly. A canvas with lines everywhere is hard to read.
+
 ## Merging Cards from Another File
 
 The canvas has a **Merge** button. To add cards without replacing existing ones:
