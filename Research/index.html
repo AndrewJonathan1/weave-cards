@@ -79,7 +79,7 @@
         /* ---- Cards ---- */
         .card-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
             width: 100%;
         }
@@ -88,39 +88,42 @@
             background: #fff;
             border: 1px solid #e5e5e0;
             border-radius: 14px;
-            padding: 28px 24px 24px;
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: var(--card-accent, #ccc);
+            padding: 28px 28px 24px;
+            transition: box-shadow 0.2s ease;
         }
 
         .card:hover {
-            box-shadow: 0 6px 24px rgba(0,0,0,0.07);
-            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
 
-        /* Per-card accent colors */
-        .card-row > .card:nth-child(1) { --card-accent: #B89545; }
-        .card-row > .card:nth-child(2) { --card-accent: #5B7B9A; }
-        .card-row > .card:nth-child(3) { --card-accent: #6B8B6B; }
-        .card-row > .card:nth-child(4) { --card-accent: #8B6B8E; }
-        .card-row > .card:nth-child(5) { --card-accent: #B86B4A; }
-
+        /* ---- Card title (h3) — the keyword ---- */
         .card h3 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: #1a1a1a;
+            margin: 0 0 2px;
+            line-height: 1.2;
+        }
+
+        /* ---- Card subtitle (em right after h3) ---- */
+        .card h3 + p { margin: 0 0 20px; }
+        .card h3 + p em,
+        .card > p em {
+            font-size: 14px;
+            font-style: italic;
+            color: #888;
+            font-weight: 400;
+        }
+
+        /* ---- Sub-section label (h4) ---- */
+        .card h4 {
             font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
+            font-weight: 600;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: var(--card-accent, #888);
-            margin: 0 0 16px;
+            color: #999;
+            margin: 0 0 10px;
         }
 
         .card p {
@@ -129,39 +132,24 @@
             color: #444;
         }
 
-        /* Top-level items as labels */
-        .card > ul, .card > ol {
+        /* ---- Subcards (list items) ---- */
+        .card ul {
             list-style: none;
             padding: 0;
             margin: 0;
-        }
-
-        .card > ul > li {
-            margin: 0 0 14px;
-            color: #2d2d2d;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .card > ul > li:last-child { margin-bottom: 0; }
-
-        /* Nested items as chips */
-        .card > ul > li > ul {
-            list-style: none;
-            padding: 0;
-            margin: 8px 0 0;
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .card > ul > li > ul > li {
-            background: #f5f5f0;
-            color: #555;
-            font-size: 12px;
+        .card li {
+            background: #f8f7f4;
+            border: 1px solid #eae7e1;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
             font-weight: 500;
-            padding: 4px 12px;
-            border-radius: 20px;
+            color: #3a3a3a;
             margin: 0;
         }
 
