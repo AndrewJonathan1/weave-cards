@@ -87,6 +87,12 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
   cursor: grab; user-select: none;
 }
 .card:hover { box-shadow: 0 4px 16px var(--card-shadow-hover); }
+/* Extend hover zone above card so color palette stays reachable */
+.card::before {
+  content: ''; position: absolute; top: -35px; left: 0; right: 0; height: 35px;
+  pointer-events: none;
+}
+.card:hover::before { pointer-events: auto; }
 .card.dragging { cursor: grabbing; }
 .card.editing { cursor: text; user-select: auto; border-color: var(--link); }
 .card-delete {
@@ -106,7 +112,9 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 .card-body h2 { font-size: 1.25em; font-weight: 700; margin: 0.25em 0; }
 .card-body h3 { font-size: 1.1em; font-weight: 600; margin: 0.2em 0; }
 .card-body p { margin: 0.3em 0; }
-.card-body ul, .card-body ol { padding-left: 1.5em; margin: 0.3em 0; }
+.card-body ul, .card-body ol { padding-left: 1.5em; margin: 0.3em 0; list-style-position: outside; }
+.card-body li { margin: 0; padding: 0; }
+.card-body li p { margin: 0; }
 .card-body code { background: var(--code-bg); padding: 0.15em 0.3em; border-radius: 3px; font-size: 0.9em; }
 .card-body strong { font-weight: 700; }
 .card-body em { font-style: italic; }
@@ -140,8 +148,12 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
   display: none; position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
   background: var(--palette-bg); border-radius: 6px; padding: 3px; box-shadow: 0 2px 10px var(--palette-shadow);
   gap: 3px; z-index: 10; flex-direction: row;
+  padding-bottom: 12px; margin-bottom: -12px;
 }
 .card:hover .color-palette { display: flex; }
+.card::before {
+  content: ''; position: absolute; top: -35px; left: 0; right: 0; height: 35px;
+}
 .color-swatch {
   width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
 }
@@ -234,9 +246,9 @@ function toggleTheme() {
 })();
 
 // --- State ---
-let state = { cards: [], connections: [] };
-let fileHandle = null;
-let saveTimer = null;
+var state = { cards: [], connections: [] };
+var fileHandle = null;
+var saveTimer = null;
 
 // Light hex + dark hex for each color.
 // Dark variants: same hue, saturation boosted, lightness ~22-28%
@@ -679,7 +691,17 @@ viewport.addEventListener('dblclick', (e) => {
 });
 
 // --- File System Access API ---
-function updateSyncStatus() {
+var isWriting = false;
+var pendingWrite = false;
+var LOCAL_STORAGE_KEY = 'canvas-state';
+
+function updateSyncStatus(msg) {
+  if (msg) {
+    syncStatusEl.textContent = msg;
+    syncStatusEl.classList.add('active');
+    setTimeout(() => updateSyncStatus(), 2000);
+    return;
+  }
   if (fileHandle) {
     syncStatusEl.textContent = fileHandle.name;
     syncStatusEl.classList.add('active');
@@ -689,7 +711,32 @@ function updateSyncStatus() {
   }
 }
 
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  } catch (e) { /* quota exceeded or unavailable */ }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.cards && parsed.cards.length > 0) {
+        state = parsed;
+        if (!state.connections) state.connections = [];
+        return true;
+      }
+    }
+  } catch (e) { /* invalid JSON */ }
+  return false;
+}
+
 async function syncToFile() {
+  if (typeof window.showSaveFilePicker !== 'function') {
+    alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
+    return;
+  }
   try {
     fileHandle = await window.showSaveFilePicker({
       suggestedName: 'canvas.json',
@@ -699,24 +746,54 @@ async function syncToFile() {
     const text = await file.text();
     if (text.trim()) {
       try {
-        state = JSON.parse(text);
-        if (!state.cards) state.cards = [];
-        if (!state.connections) state.connections = [];
-        renderAll();
-      } catch (e) { /* not valid JSON, start fresh */ }
+        const loaded = JSON.parse(text);
+        if (loaded.cards && loaded.cards.length > 0) {
+          state = loaded;
+          if (!state.connections) state.connections = [];
+          renderAll();
+        }
+      } catch (e) { console.warn('File contained invalid JSON, starting fresh'); }
     }
     updateSyncStatus();
     await writeToFile();
-  } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      console.error('Sync failed:', e);
+      updateSyncStatus('Sync failed');
+    }
+  }
 }
 
 async function writeToFile() {
+  // Always save to localStorage as backup
+  saveToLocalStorage();
+
   if (!fileHandle) return;
+
+  // Prevent concurrent writes
+  if (isWriting) {
+    pendingWrite = true;
+    return;
+  }
+  isWriting = true;
+
   try {
     const writable = await fileHandle.createWritable();
     await writable.write(JSON.stringify(state, null, 2));
     await writable.close();
-  } catch (e) { console.error('Save failed:', e); }
+  } catch (e) {
+    console.error('Save failed:', e);
+    if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
+      fileHandle = null;
+      updateSyncStatus('Save failed — re-sync needed');
+    }
+  } finally {
+    isWriting = false;
+    if (pendingWrite) {
+      pendingWrite = false;
+      writeToFile();
+    }
+  }
 }
 
 function scheduleSave() {
@@ -725,6 +802,10 @@ function scheduleSave() {
 }
 
 async function mergeFile() {
+  if (typeof window.showOpenFilePicker !== 'function') {
+    alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
+    return;
+  }
   try {
     const [handle] = await window.showOpenFilePicker({
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
@@ -759,6 +840,9 @@ async function mergeFile() {
 }
 
 // --- Init ---
+if (loadFromLocalStorage()) {
+  renderAll();
+}
 updateTransform();
 </script>
 
