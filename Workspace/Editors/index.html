@@ -217,11 +217,14 @@ html.dark #file-status.saving .status-dot { background: #f5d56a; }
 #file-status.saved { color: #3a8a6a; }
 html.dark #file-status.saved { color: #c0f0d0; }
 html.dark #file-status.saved .status-dot { background: #5bba9a; }
-/* Import button — smaller, less prominent */
-#import-btn {
-  padding: 4px 10px; font-size: 12px; color: var(--text-muted); border-color: transparent;
+/* Disconnect button inside file-status */
+#disconnect-btn {
+  background: none; border: none; cursor: pointer; font-size: 14px; line-height: 1;
+  color: var(--text-muted); padding: 0 2px; margin-left: 2px; opacity: 0.5;
 }
-#import-btn:hover { border-color: var(--toolbar-border); color: var(--text); }
+#disconnect-btn:hover { opacity: 1; color: var(--delete-hover); }
+#file-label { cursor: pointer; }
+#file-label:hover { text-decoration: underline; }
 
 /* Connect file overlay — blocking until file is chosen */
 #connect-overlay {
@@ -351,8 +354,7 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
 </head>
 <body>
 <div id="toolbar">
-  <span id="file-status" onclick="selectFile()"><span class="status-dot"></span><span id="file-label"></span></span>
-  <button id="import-btn" class="tb-btn" onclick="importCards()" style="display:none">Add Cards</button>
+  <span id="file-status"><span class="status-dot"></span><span id="file-label" onclick="selectFile()"></span><button id="disconnect-btn" onclick="event.stopPropagation();disconnectFile()">&times;</button></span>
   <button id="reload-btn" class="tb-btn" onclick="reloadFile()" style="display:none">Reload</button>
   <button id="wait-btn" class="tb-btn" onclick="enterWaitMode()" style="display:none">Wait for AI</button>
   <div class="sep"></div>
@@ -410,8 +412,8 @@ html.dark #file-status.saved .status-dot { background: #5bba9a; }
   <div class="help-row"><span class="help-key">Space+drag</span><span class="help-desc">pan</span></div>
   <div class="help-row"><span class="help-key">Ctrl+scroll / pinch</span><span class="help-desc">zoom</span></div>
   <h4>File</h4>
-  <div class="help-row"><span class="help-key">click filename</span><span class="help-desc">switch or connect file</span></div>
-  <div class="help-row"><span class="help-key">Add Cards</span><span class="help-desc">merge cards from another file</span></div>
+  <div class="help-row"><span class="help-key">click filename</span><span class="help-desc">switch file</span></div>
+  <div class="help-row"><span class="help-key">✕ button</span><span class="help-desc">disconnect file</span></div>
   <div class="help-row"><span class="help-key">Reload</span><span class="help-desc">re-read file from disk</span></div>
   <div class="help-row"><span class="help-key">Wait for AI</span><span class="help-desc">lock canvas, auto-reload on change</span></div>
 </div>
@@ -1595,8 +1597,6 @@ function updateSyncStatus(msg, temporary) {
   if (reloadBtn) reloadBtn.style.display = connected ? '' : 'none';
   var waitBtn = document.getElementById('wait-btn');
   if (waitBtn) waitBtn.style.display = connected ? '' : 'none';
-  var importBtn = document.getElementById('import-btn');
-  if (importBtn) importBtn.style.display = connected ? '' : 'none';
 }
 function showSaved() {
   fileStatus.classList.remove('saving');
@@ -1697,6 +1697,7 @@ function disconnectFile() {
   fileHandle = null;
   clearFileHandle();
   updateSyncStatus();
+  document.getElementById('connect-overlay').classList.add('open');
   console.log('[file] disconnected');
 }
 
@@ -1810,52 +1811,6 @@ setInterval(async () => {
   } catch (e) { /* file might be mid-write, ignore */ }
 }, 1000);
 
-async function importCards() {
-  console.log('[file] importCards called');
-  console.log('[file] showOpenFilePicker available:', typeof window.showOpenFilePicker);
-  console.log('[file] isSecureContext:', window.isSecureContext);
-  console.log('[file] protocol:', location.protocol, 'host:', location.host);
-  if (typeof window.showOpenFilePicker !== 'function') {
-    alert('File System Access API is not available.\nPlease use Chrome/Edge and serve over HTTP or HTTPS.');
-    return;
-  }
-  try {
-    console.log('[file] calling showOpenFilePicker for import...');
-    const [handle] = await window.showOpenFilePicker({
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-    });
-    const file = await handle.getFile();
-    const text = await file.text();
-    const other = JSON.parse(text);
-    if (!other.cards) return;
-
-    pushUndo();
-    let maxRight = 0;
-    state.cards.forEach(c => { maxRight = Math.max(maxRight, c.x + c.w); });
-    const offset = maxRight + 80;
-
-    const idMap = {};
-    other.cards.forEach(c => {
-      const newId = uid();
-      idMap[c.id] = newId;
-      c.id = newId;
-      c.x += offset;
-      state.cards.push(c);
-    });
-    if (other.connections) {
-      other.connections.forEach(cn => {
-        cn.from = idMap[cn.from] || cn.from;
-        cn.to = idMap[cn.to] || cn.to;
-        state.connections.push(cn);
-      });
-    }
-    renderAll();
-    scheduleSave();
-  } catch (e) {
-    console.error('[file] Import failed:', e.name, e.message, e);
-    if (e.name !== 'AbortError') { /* non-cancel error */ }
-  }
-}
 
 // --- Init ---
 // File takes priority over localStorage. Only fall back to localStorage
