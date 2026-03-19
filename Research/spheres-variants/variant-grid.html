@@ -1,0 +1,200 @@
+<!-- VARIANT: Flat grid of sphere cards. Focus areas (📍) are larger/prominent cards.
+     Each card contains its sub-items as compact rows. The grid auto-fills,
+     giving focus areas more visual weight. -->
+<style>
+    .sphere-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+        width: 100%;
+    }
+
+    .sphere-card {
+        background: #fff;
+        border: 1px solid #e5e2dc;
+        border-radius: 12px;
+        padding: 24px;
+        transition: box-shadow 0.2s;
+    }
+
+    .sphere-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    }
+
+    .sphere-card.focus {
+        border-left: 3px solid #B89545;
+        background: #fffdf8;
+    }
+
+    .sphere-card .sphere-path {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #bbb;
+        margin-bottom: 8px;
+    }
+
+    .sphere-card .sphere-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .sphere-card .sphere-name .pin {
+        color: #B89545;
+        font-size: 14px;
+    }
+
+    .sphere-card .sub-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .sphere-card .sub-item {
+        font-size: 13px;
+        color: #555;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0eeea;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .sphere-card .sub-item:last-child {
+        border-bottom: none;
+    }
+
+    .sphere-card .sub-item .sub-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #aaa;
+        min-width: 36px;
+    }
+
+    .sphere-card .sub-group {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #eae7e1;
+    }
+
+    .sphere-card .sub-group-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #999;
+        margin-bottom: 6px;
+    }
+</style>
+
+<div class="sphere-grid">
+    <!-- Event Organization > Life Events > Events -->
+    <div class="sphere-card focus">
+        <div class="sphere-path">Event Organization · Life Events</div>
+        <div class="sphere-name"><span class="pin">📍</span> Weddings</div>
+        <div class="sub-items">
+            <div class="sub-item">PRESENTATION & PROCESS</div>
+            <div class="sub-item">Individuals</div>
+            <div class="sub-item">Wedding Planners</div>
+        </div>
+    </div>
+
+    <div class="sphere-card focus">
+        <div class="sphere-path">Event Organization · Life Events</div>
+        <div class="sphere-name"><span class="pin">📍</span> Funerals</div>
+        <div class="sub-items">
+            <div class="sub-item">Funeral Homes</div>
+        </div>
+    </div>
+
+    <div class="sphere-card">
+        <div class="sphere-path">Event Organization · Life Events</div>
+        <div class="sphere-name">Other Life Events</div>
+        <div class="sub-items">
+            <div class="sub-item">Baby showers</div>
+            <div class="sub-item">Coming of Age (Bar Mitzvahs, Quinceañeras)</div>
+        </div>
+        <div class="sub-group">
+            <div class="sub-group-label">Distribution</div>
+            <div class="sub-items">
+                <div class="sub-item">D2C</div>
+                <div class="sub-item">Service People</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sphere-card">
+        <div class="sphere-path">Event Organization</div>
+        <div class="sphere-name">Conferences</div>
+    </div>
+
+    <!-- Real Estate -->
+    <div class="sphere-card focus">
+        <div class="sphere-name"><span class="pin">📍</span> Real Estate</div>
+        <div class="sub-items">
+            <div class="sub-item">Agents</div>
+            <div class="sub-item">Property Listings</div>
+        </div>
+    </div>
+
+    <!-- Local Businesses -->
+    <div class="sphere-card focus">
+        <div class="sphere-name"><span class="pin">📍</span> Local Businesses</div>
+        <div class="sub-items">
+            <div class="sub-item">Dentists</div>
+            <div class="sub-item">Lawyers</div>
+            <div class="sub-item">Photographers</div>
+        </div>
+    </div>
+
+    <!-- Remote Contractors -->
+    <div class="sphere-card focus">
+        <div class="sphere-name"><span class="pin">📍</span> Remote Contractors</div>
+        <div class="sub-group">
+            <div class="sub-group-label">Who</div>
+            <div class="sub-items">
+                <div class="sub-item">Coaches</div>
+                <div class="sub-item">Presentation</div>
+                <div class="sub-item">Consultants</div>
+                <div class="sub-item">Agencies</div>
+                <div class="sub-item">Marketing Teams</div>
+            </div>
+        </div>
+        <div class="sub-group">
+            <div class="sub-group-label">What</div>
+            <div class="sub-items">
+                <div class="sub-item">Pitch Pages</div>
+                <div class="sub-item">Delivery Portal</div>
+                <div class="sub-item">Client Deliverables</div>
+                <div class="sub-item">Micro Sites</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Small Businesses -->
+    <div class="sphere-card">
+        <div class="sphere-name">Small Businesses</div>
+        <div class="sub-items">
+            <div class="sub-item">Dentist</div>
+            <div class="sub-item">Therapist</div>
+            <div class="sub-item">Lawyer</div>
+            <div class="sub-item">Restaurants</div>
+        </div>
+    </div>
+
+    <!-- Education -->
+    <div class="sphere-card">
+        <div class="sphere-name">Education</div>
+        <div class="sub-items">
+            <div class="sub-item">Thought Leaders</div>
+        </div>
+    </div>
+</div>

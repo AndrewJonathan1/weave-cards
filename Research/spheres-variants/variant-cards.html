@@ -1,0 +1,191 @@
+<!-- Spheres & Specific Businesses — Nested Cards Variant -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        warm: {
+          50: '#fdf8f0',
+          100: '#f9edd8',
+          200: '#f2d8b0',
+          300: '#e8bc7e',
+          400: '#de9a4e',
+          500: '#d4802e',
+          600: '#b86624',
+          700: '#984d20',
+          800: '#7c3f20',
+          900: '#66351e',
+        },
+        sand: {
+          50: '#faf8f5',
+          100: '#f3efe8',
+          200: '#e8e0d2',
+          300: '#d6cab5',
+        },
+        focus: {
+          border: '#d4802e',
+          bg: '#fdf8f0',
+          badge: '#f2d8b0',
+        }
+      }
+    }
+  }
+}
+</script>
+
+<section class="max-w-5xl mx-auto px-6 py-16 font-sans">
+  <div class="mb-12 text-center">
+    <h2 class="text-4xl font-bold text-warm-900 tracking-tight">Spheres & Specific Businesses</h2>
+    <p class="mt-3 text-warm-600 text-lg">The niches we serve — and where we go deepest</p>
+    <div class="flex items-center justify-center gap-2 mt-4 text-sm text-warm-500">
+      <span class="inline-block w-3 h-3 rounded-sm bg-warm-400"></span>
+      <span>Focus areas</span>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+
+    <!-- EVENT ORGANIZATION -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden">
+      <div class="px-8 pt-7 pb-2">
+        <h3 class="text-xl font-semibold text-warm-900">Event Organization</h3>
+      </div>
+      <div class="px-8 pb-8 space-y-4">
+
+        <!-- Life Events -->
+        <div class="bg-sand-50 rounded-xl border border-sand-200 p-6">
+          <h4 class="text-lg font-semibold text-warm-800 mb-4">Life Events</h4>
+
+          <div class="space-y-3">
+            <!-- Events sub-group -->
+            <div class="bg-white rounded-lg border border-sand-200 p-5">
+              <h5 class="text-sm font-medium text-warm-600 uppercase tracking-wide mb-3">Events</h5>
+              <div class="grid sm:grid-cols-2 gap-3">
+
+                <!-- Weddings (focus) -->
+                <div class="border-l-4 border-warm-400 bg-focus-bg rounded-lg px-4 py-3">
+                  <div class="flex items-start gap-2">
+                    <span class="text-lg leading-none mt-0.5">📍</span>
+                    <div>
+                      <p class="font-semibold text-warm-900">Weddings</p>
+                      <p class="text-sm text-warm-600 mt-0.5">Presentation & Process</p>
+                      <p class="text-xs text-warm-500 mt-1">Individuals, Wedding Planners</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Funerals (focus) -->
+                <div class="border-l-4 border-warm-400 bg-focus-bg rounded-lg px-4 py-3">
+                  <div class="flex items-start gap-2">
+                    <span class="text-lg leading-none mt-0.5">📍</span>
+                    <div>
+                      <p class="font-semibold text-warm-900">Funerals</p>
+                      <p class="text-xs text-warm-500 mt-1">Funeral Homes</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Baby Showers -->
+                <div class="bg-sand-50 rounded-lg px-4 py-3 border border-sand-200">
+                  <p class="font-medium text-warm-800">Baby Showers</p>
+                </div>
+
+                <!-- Coming of Age -->
+                <div class="bg-sand-50 rounded-lg px-4 py-3 border border-sand-200">
+                  <p class="font-medium text-warm-800">Coming of Age</p>
+                  <p class="text-xs text-warm-500 mt-1">Bar Mitzvahs, Quinceañeras</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distribution -->
+            <div class="bg-white rounded-lg border border-sand-200 px-5 py-3">
+              <h5 class="text-sm font-medium text-warm-600 uppercase tracking-wide mb-1">Distribution</h5>
+              <p class="text-warm-700">D2C, Service People</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conferences -->
+        <div class="bg-sand-50 rounded-xl border border-sand-200 px-6 py-4">
+          <h4 class="text-lg font-semibold text-warm-800">Conferences</h4>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- REAL ESTATE (focus) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden border-l-4 border-l-warm-400">
+      <div class="px-8 py-6 flex items-start gap-3">
+        <span class="text-xl leading-none mt-0.5">📍</span>
+        <div>
+          <h3 class="text-xl font-semibold text-warm-900">Real Estate</h3>
+          <p class="text-sm text-warm-600 mt-1">Agents, Property Listings</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCAL BUSINESSES (focus) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden border-l-4 border-l-warm-400">
+      <div class="px-8 py-6 flex items-start gap-3">
+        <span class="text-xl leading-none mt-0.5">📍</span>
+        <div>
+          <h3 class="text-xl font-semibold text-warm-900">Local Businesses</h3>
+          <p class="text-sm text-warm-600 mt-1">Dentists, Lawyers, Photographers</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMOTE CONTRACTORS (focus) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden border-l-4 border-l-warm-400">
+      <div class="px-8 pt-7 pb-2 flex items-start gap-3">
+        <span class="text-xl leading-none mt-1">📍</span>
+        <h3 class="text-xl font-semibold text-warm-900">Remote Contractors</h3>
+      </div>
+      <div class="px-8 pb-8">
+        <div class="grid sm:grid-cols-2 gap-4 mt-3">
+
+          <div class="bg-sand-50 rounded-xl border border-sand-200 p-5">
+            <h4 class="text-sm font-medium text-warm-600 uppercase tracking-wide mb-2">Who</h4>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Coaches</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Presentation</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Consultants</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Agencies</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Marketing Teams</span>
+            </div>
+          </div>
+
+          <div class="bg-sand-50 rounded-xl border border-sand-200 p-5">
+            <h4 class="text-sm font-medium text-warm-600 uppercase tracking-wide mb-2">What</h4>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Pitch Pages</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Delivery Portal</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Client Deliverables</span>
+              <span class="bg-white border border-sand-200 text-warm-800 text-sm px-3 py-1 rounded-full">Micro Sites</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SMALL BUSINESSES -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden">
+      <div class="px-8 py-6">
+        <h3 class="text-xl font-semibold text-warm-900">Small Businesses / Individual Customers</h3>
+        <p class="text-sm text-warm-600 mt-1">Dentist, Therapist, Lawyer, Restaurants</p>
+      </div>
+    </div>
+
+    <!-- EDUCATION -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden">
+      <div class="px-8 py-6">
+        <h3 class="text-xl font-semibold text-warm-900">Education</h3>
+        <p class="text-sm text-warm-600 mt-1">Thought Leaders</p>
+      </div>
+    </div>
+
+  </div>
+</section>

@@ -4,8 +4,8 @@ style: cards
 color: #8B7355
 ---
 
-### PRESENTATION
-*of a Thing or Person*
+### Presentation
+of a **Thing** or **Person**
 
 #### Convey
 1. Information

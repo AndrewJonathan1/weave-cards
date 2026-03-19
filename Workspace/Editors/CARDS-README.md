@@ -55,17 +55,96 @@ The active canvas file is: `canvas.json` (in this directory)
 | Sky | `#DBEAFE` | Info / reference |
 | Lavender | `#E8DFEF` | Creative / ideas |
 
+### Rendering Dimensions (exact CSS values)
+
+These are the exact rendering properties — use them to predict how content will look inside a card.
+
+**Card container:**
+- Border radius: 8px
+- Border: 1px solid (light gray in light mode)
+- Min width: 160px, min height: 80px
+- Shadow: subtle drop shadow
+
+**Card body (content area):**
+- Padding: 10px top/bottom, 12px left/right
+- Font: `-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif`
+- Font size: 14px
+- Line height: 1.5 (= 21px per line)
+- Word wrap: break-word
+- Overflow: auto (scrolls if content exceeds height)
+
+**Usable content width** = card.w - 24px (12px padding each side) - 2px (border)
+- A 320px wide card has ~294px of usable text width
+- At 14px system font, this fits roughly **40-50 characters per line**
+
+**Usable content height** = card.h - 20px (10px padding each side) - 2px (border)
+- A 200px tall card has ~178px of usable text height
+- At 21px per line, this fits roughly **8 lines** of body text
+
 ### Content Formatting (Markdown)
 
-Cards support standard markdown:
-- `# H1`, `## H2`, `### H3` — headings (rendered at different sizes)
-- `**bold**`, `*italic*`
-- `- bullet` — unordered lists
-- `` `inline code` ``
-- `[link text](url)`
-- Blank lines create paragraph breaks
+Cards use Tiptap (ProseMirror) for editing, which supports markdown input rules. The display renderer handles the same subset.
+
+**Headings** (rendered at distinct sizes in both edit and display mode):
+- `# H1` → font-size: 1.5em (21px), font-weight: 700, margin: 0.3em top/bottom
+- `## H2` → font-size: 1.25em (17.5px), font-weight: 700, margin: 0.25em
+- `### H3` → font-size: 1.1em (15.4px), font-weight: 600, margin: 0.2em
+
+**Inline formatting:**
+- `**bold**` → font-weight: 700
+- `*italic*` → font-style: italic
+- `` `inline code` `` → monospace, light gray background, 0.9em font-size, 3px border-radius
+
+**Lists:**
+- `- item` or `* item` → unordered list with bullet
+- `1. item` → ordered list with number
+- Lists have 1.5em left padding, no extra margin per item
+- Tiptap wraps list item text in `<p>` tags (margin normalized to 0)
+
+**Links:**
+- `[text](url)` → underlined, inherits text color
+
+**Paragraphs:**
+- Blank line between text creates a new paragraph
+- Paragraph margin: 0.3em top/bottom
+- Single newline within a paragraph: depends on context (Tiptap treats Enter as new paragraph)
+
+**Not supported:** Tables, images, blockquotes, horizontal rules, code blocks (fenced). Keep content simple.
+
+### Estimating Card Size from Content
+
+Use this to calculate how big a card should be:
+
+```
+lines_needed = 0
+for each line in content.split('\n'):
+    if line starts with '#':  # heading
+        lines_needed += 2  # heading + margin
+    elif line starts with '- ':  # list item
+        lines_needed += 1
+    elif line == '':  # blank line
+        lines_needed += 0.5
+    else:  # body text
+        chars = len(line)
+        wrapped_lines = ceil(chars / 45)  # ~45 chars per line at 320w
+        lines_needed += wrapped_lines
+
+height = max(150, lines_needed * 21 + 40)  # 21px/line + 40px padding
+width = 320  # default, increase for wide content
+```
 
 **Tip:** Keep card content concise. A card should hold ONE idea, ONE concept, ONE grouping. If you need more space, make the card wider/taller or split into multiple cards.
+
+### Keyboard Shortcuts (when cards are selected, not editing)
+
+- `Cmd+A` — select all cards
+- `Escape` — deselect all
+- `Delete` / `Backspace` — delete selected (confirms if >1)
+- `Cmd+D` — duplicate selected cards (offset 30px down-right)
+- `Arrow keys` — nudge selected cards by 10px
+- `Shift+Click` — toggle card in/out of selection
+- Click empty canvas — deselect all
+- Drag on empty canvas — rubber band / marquee select
 
 ## Connection Schema
 
